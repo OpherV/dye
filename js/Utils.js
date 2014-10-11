@@ -98,7 +98,7 @@ Dye.Utils= (function(){
             if (r) pixel.r = r;
             if (g) pixel.g = g;
             if (b) pixel.b = b;
-            if (a) pixel.a=pixel.a/a;
+            if (a) pixel.a=pixel.a*a;
 
             return pixel;
         };

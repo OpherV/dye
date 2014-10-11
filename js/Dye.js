@@ -7,9 +7,8 @@ Dye.core=(function(){
 
 
     var brush;
-    var clearBrush;
     var bitmapData;
-    var boid;
+    var currentLevel;
 
     function preload() {
        game.load.image('brush', 'assets/brush.png');
@@ -30,42 +29,20 @@ Dye.core=(function(){
 
         bitmapData.addToWorld();
 
-        var level={
-            game: game,
-            bitmapData: bitmapData,
-            debugGraphic: game.add.graphics(0,0)
-        };
-
-
-        brush = Dye.Utils.getBrushSprite(game,255,null,null,30).brush;
-        clearBrush = Dye.Utils.getBrushSprite(this.game,30,30,30).brush;
-
-        //boids
-        boid=new Dye.Boid(level,1,400,400);
-        game.add.existing(boid);
-
-        game.input.addMoveCallback(paint, this);
+        currentLevel=new Dye.Level(game);
 
     }
 
-
-
-    function paint(pointer, x, y) {
-
-        if (pointer.isDown)
-        {
-            bitmapData.draw(brush, x, y,null,null,'lighter');
-        }
-
-    }
 
     function update() {
-        boid.update();
+        if (currentLevel) {
+            currentLevel.update();
+        }
     }
 
 
     function render(){
-        bitmapData.draw(clearBrush, boid.x, boid.y,25,25,null);
+        //bitmapData.draw(clearBrush, boid.x, boid.y,25,25,null);
     }
 
 
