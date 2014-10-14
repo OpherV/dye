@@ -1,19 +1,24 @@
 Dye=(window.Dye?window.Dye:{});
-Dye.Character= function (level,id,x,y) {
+Dye.Character= function (level,id,x,y,stats) {
     this.id=id;
     this.level=level;
     this.game=this.level.game;
 
-    this.stats={
+    var defaultStats={
         speed: 10,
-        maxSpeed: 10
+        maxSpeed: 10,
+        rotateSpeed: 50
     };
+
+    this.stats=Dye.Utils.extend.call(defaultStats,stats);
 
     this.steerType=null;
 
     this.inContactWith={}; //Bodies this is touching
     this.startContactHandler={};
     this.endContactHandler={};
+
+    this.timeEvents = {};
 
 
 };
@@ -94,25 +99,26 @@ Dye.Character.prototype.getClosest=function(objects,maximalDistance){
 };
 
 Dye.Character.STEERINGTYPES={
-    chase: "chase"
+    chase: "chase",
+    flee: "flee"
 };
 
 Dye.Character.prototype.steer=function(){
-
     if (this.steeringType==Dye.Character.STEERINGTYPES.chase){
         if (!this.target){return}
 
+        this.body.thrust(this.stats.speed);
+        this.limitVelocity(this.stats.maxSpeed);
         //var mouseToBoid = new Phaser.Point(this.x-this.game.input.x,this.y-this.game.input.y);
         var targetToBoid= new Phaser.Point(this.x-this.target.x,this.y-this.target.y);
         var cross = (targetToBoid.x * Math.sin(this.rotation+Math.PI/2)) - (targetToBoid.y * Math.cos(this.rotation+Math.PI/2));
-        if (Math.abs(cross)>2) {
+        if (Math.abs(cross)>0) {
             if (cross > 0)
-                this.body.rotateLeft(50);
+                this.body.rotateLeft(this.stats.rotateSpeed);
             else
-                this.body.rotateRight(50);
+                this.body.rotateRight(this.stats.rotateSpeed);
         }
     }
-
 };
 
 //inheriting classes will override this to implement contact event handlers

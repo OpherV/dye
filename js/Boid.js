@@ -1,26 +1,44 @@
 Dye=(window.Dye?window.Dye:{});
-Dye.Boid= function (level,id,x,y,hsla) {
-    Dye.Character.call(this, level, id,x,y);
+Dye.Boid= function (level,id,x,y,stats) {
+    Dye.Character.call(this, level, id,x,y,stats);
+
+    var defaultStats={
+        speed: 100,
+        maxSpeed: 6,
+        lifespan: 20,
+        minimalSize: 2,
+        maximalSize: 10,
+        isFood: false
+    };
+
+    this.stats=Dye.Utils.extend.call(this.stats,defaultStats);
+    this.stats=Dye.Utils.extend.call(this.stats,stats);
+    this.stats.size=this.stats.minimalSize;
+    if (this.stats.isFood){
+        this.stats.colorHSLA[1]=30;
+    }
 
     this.kind="boid";
 
-    this.colorHSLA=hsla;
-    this.colorRGB=Dye.Utils.hslToRgb(this.colorHSLA[0],this.colorHSLA[1],this.colorHSLA[2]);
+    this.stats.colorRGB=Dye.Utils.hslToRgb(this.stats.colorHSLA[0],
+                                            this.stats.colorHSLA[1],
+                                            this.stats.colorHSLA[2]);
 
     //construct sprite
     Phaser.Sprite.call(this, this.game, x, y);
-    this.game.physics.p2.enable(this,false); +
-    this.body.setCircle(2);
-    this.body.setZeroDamping();
+    this.game.physics.p2.enable(this,false);
+
+    this.setSize(this.stats.size);
     this.body.collideWorldBounds=true;
+    this.body.setZeroDamping();
+    this.body.setZeroVelocity();
 
-
-    this.bitmapData=this.game.make.bitmapData(10,30);
-    this.bitmapData.ctx.fillStyle = "rgba({0},{1},{2},1)".format(this.colorRGB[0],this.colorRGB[1],this.colorRGB[2]);
+    this.bitmapData=this.game.make.bitmapData(300,300);
+    this.bitmapData.ctx.fillStyle = "rgba({0},{1},{2},1)".format(this.stats.colorRGB[0],this.stats.colorRGB[1],this.stats.colorRGB[2]);
     this.bitmapData.ctx.beginPath();
-    this.bitmapData.ctx.moveTo(5, 0);
-    this.bitmapData.ctx.lineTo(0, 30);
-    this.bitmapData.ctx.lineTo(10, 30);
+    this.bitmapData.ctx.moveTo(150, 0);
+    this.bitmapData.ctx.lineTo(50, 300);
+    this.bitmapData.ctx.lineTo(250, 300);
     this.bitmapData.ctx.fill();
 
 
@@ -28,8 +46,6 @@ Dye.Boid= function (level,id,x,y,hsla) {
  //   this.body.rotation=Math.PI/2;
 
     this.steeringType=Dye.Character.STEERINGTYPES.chase;
-
-    this.targetFindEvent = this.game.time.events.loop(Phaser.Timer.SECOND*3, this.findTarget, this)
 
     this.init();
 
@@ -42,17 +58,60 @@ Dye.Boid.prototype.constructor = Dye.Boid;
 
 Dye.Boid.prototype.init = function() {
     Dye.Character.prototype.init.call(this);
+    if (!this.stats.isFood){
+        this.timeEvents.deathTimer=this.game.time.events.add(Phaser.Timer.SECOND*this.stats.lifespan, this.naturalDeath, this);
+        this.timeEvents.targetFindEvent = this.game.time.events.loop(Phaser.Timer.SECOND, this.findTarget, this);
+
+        this.findTarget();
+    }
 };
 
 Dye.Boid.prototype.update = function(){
-    this.body.thrust(100);
-    this.limitVelocity(3);
     this.steer();
 };
 
 
 Dye.Boid.prototype.findTarget=function(){
-    this.target=this.getClosest(this.level.layers.food,500);
+    var that=this;
+    var closestFood = null;
+    var closestFoodDistance=null;
+
+    var closestEnemy = null;
+    var closestEnemyDistance=null;
+
+    this.level.layers.boids.forEachAlive(function(boid){
+        var distanceToCreature=Phaser.Point.distance(that,boid,true);
+
+        if (boid!=that && (boid.stats.species!=that.stats.species || boid.stats.isFood) &&
+            boid.stats.size<that.stats.size &&  (closestFood==null || distanceToCreature<closestFoodDistance)){
+            closestFood=boid;
+            closestFoodDistance=distanceToCreature;
+        }
+
+    });
+
+    this.level.layers.boids.forEachAlive(function(boid){
+        var distanceToCreature=Phaser.Point.distance(that,boid,true);
+
+        if (boid!=that && boid.stats.species!=that.stats.species && boid.stats.size>that.stats.size &&  (closestEnemy==null || distanceToCreature<closestEnemyDistance)){
+            closestEnemy=boid;
+            closestEnemyDistance=distanceToCreature;
+        }
+    });
+
+    if ((closestFood==null && closestEnemy) || (closestEnemy && closestEnemyDistance<closestFoodDistance) ){
+        //console.log(closestEnemy);
+        var fleeVector=new Phaser.Point(this.x-closestEnemy.x,this.y-closestEnemy.y);
+        fleeVector.setMagnitude(fleeVector.getMagnitude()*2);
+        this.target={x: closestEnemy.x+fleeVector.x,
+            y: closestEnemy.y+fleeVector.y};
+    }
+    else if (closestFood){
+        this.target=closestFood;
+    }
+    else{
+        this.target=null;
+    }
 };
 
 Dye.Boid.prototype.limitVelocity = function(maxVelocity){
@@ -73,5 +132,58 @@ Dye.Boid.prototype.limitVelocity = function(maxVelocity){
 Dye.Boid.prototype.startContactHandlers= {
     "food": function (body) {
         body.sprite.destroy();
+    },
+    "boid": function(body){
+        //eat target boid
+        if ((this.stats.species!=body.sprite.stats.species || body.sprite.stats.isFood)  && this.stats.size>body.sprite.stats.size){
+            this.setSize(this.stats.size+body.sprite.stats.size);
+            body.sprite.die();
+            while(this.stats.size>this.stats.maximalSize){
+                if (this.body)
+                    this.setSize(this.stats.size-this.stats.minimalSize);
+
+                //creature new minicreature
+                var newBoid=new Dye.Boid(this.level,Dye.Utils.generateGuid(),this.x,this.y,this.stats);
+                this.level.layers.boids.add(newBoid);
+            }
+
+        }
     }
+};
+
+
+
+
+Dye.Boid.prototype.setSize=function(size){
+    this.stats.size=size;
+    this.scale.setTo(this.stats.size/20, this.stats.size/20);
+    this.body.setRectangle(this.stats.size*15,this.stats.size*15);
+};
+
+
+Dye.Boid.prototype.die=function(){
+    this.kill();
+    this.destroy();
+    for (var timerName in this.timeEvents){
+        this.timeEvents[timerName].timer.remove(this.timeEvents[timerName]);
+        delete this.timeEvents[timerName];
+    }
+};
+
+Dye.Boid.prototype.naturalDeath=function(){
+    var newBoidStats=Dye.Utils.clone(this.stats);
+    newBoidStats.isFood=true;
+    newBoidStats.minimalSize=1;
+    for (var x=0;x<this.stats.size;x++){
+        var newBoid=new Dye.Boid(this.level,Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
+        newBoid.body.rotation=Math.random()*Math.PI;
+        this.level.layers.boids.add(newBoid);
+        var randomDirectionPoint=new Phaser.Point(Math.random()*2-1, Math.random()*2-1);
+        randomDirectionPoint.setMagnitude(10);
+        newBoid.moveInDirecton(randomDirectionPoint);
+
+        //newBoid.moveInDirecton(new Phaser.Point(0,0));
+
+    }
+    this.die();
 };
