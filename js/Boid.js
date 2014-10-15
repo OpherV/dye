@@ -3,8 +3,8 @@ Dye.Boid= function (level,id,x,y,stats) {
     Dye.Character.call(this, level, id,x,y,stats);
 
     var defaultStats={
-        speed: 100,
-        maxSpeed: 6,
+        speed: 200,
+        maxSpeed: 7,
         lifespan: 20,
         minimalSize: 2,
         maximalSize: 10,
@@ -29,6 +29,9 @@ Dye.Boid= function (level,id,x,y,stats) {
     this.game.physics.p2.enable(this,false);
 
     this.setSize(this.stats.size);
+    //this.body.setCollisionGroup(this.level.collisionGroups.boids);
+    //this.body.collides(this.level.collisionGroups.boids);
+    //this.body.data.shapes[0].sensor = true;
     this.body.collideWorldBounds=true;
     this.body.setZeroDamping();
     this.body.setZeroVelocity();
@@ -157,7 +160,7 @@ Dye.Boid.prototype.startContactHandlers= {
 Dye.Boid.prototype.setSize=function(size){
     this.stats.size=size;
     this.scale.setTo(this.stats.size/20, this.stats.size/20);
-    this.body.setRectangle(this.stats.size*15,this.stats.size*15);
+    this.body.setCircle(this.stats.size*6);
 };
 
 

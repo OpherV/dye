@@ -32,15 +32,20 @@ Dye.Character.prototype.init= function() {
     this.body.onBeginContact.add(beginContactHandler, this);
     this.body.onEndContact.add(endContactHandler, this);
 
-    function beginContactHandler(body, shapeA, shapeB, equation) {
-        //add to inContactWith
-        if (body && !this.inContactWith[body.sprite.id] ){
-            this.inContactWith[body.sprite.id]=body;
-        }
+    function beginContactHandler(body, shapeA, shapeB, equation)
+    {
+        if (this.body) {
+            //add to inContactWith
+            if (body && !this.inContactWith[body.sprite.id]) {
+                this.inContactWith[body.sprite.id] = body;
+            }
 
-        if (!(body && body.sprite && body.sprite!=null)){ return; }
-        if (this.startContactHandlers[body.sprite.kind]){
-            this.startContactHandlers[body.sprite.kind].call(this,body);
+            if (!(body && body.sprite && body.sprite != null)) {
+                return;
+            }
+            if (this.startContactHandlers[body.sprite.kind]) {
+                this.startContactHandlers[body.sprite.kind].call(this, body);
+            }
         }
     }
 

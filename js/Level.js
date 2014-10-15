@@ -26,18 +26,20 @@ Dye.Level= function (game) {
     this.debugGraphic=game.add.graphics(0,0);
 
 
-    for (var x=0;x<15;x++){
-        var minimalSize=game.rnd.integerInRange(2, 7);
+    for (var x=0;x<5;x++){
+        var minimalSize=game.rnd.integerInRange(2, 4);
         var speciesData= {
             species: x,
             colorHSLA: [game.rnd.integerInRange(0, 359), 69, 30, 1],
             minimalSize: minimalSize,
             //maximalSize: minimalSize  +1,
             maximalSize: minimalSize * game.rnd.integerInRange(2, 2),
-            lifespan: game.rnd.integerInRange(20, 20)
+            lifespan: game.rnd.integerInRange(30, 30)
         };
-        var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,speciesData);
-        this.layers.boids.add(boid);
+        for (var y=0;y<3;y++){
+            var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,speciesData);
+            this.layers.boids.add(boid);
+        }
     }
 
     //this.game.input.addMoveCallback(this.paint, this);
