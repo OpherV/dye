@@ -31,8 +31,8 @@ Dye.Boid= function (level,id,x,y,stats) {
     this.setSize(this.stats.size);
     //this.body.setCollisionGroup(this.level.collisionGroups.boids);
     //this.body.collides(this.level.collisionGroups.boids);
-    //this.body.data.shapes[0].sensor = true;
-    this.body.collideWorldBounds=true;
+    this.body.data.shapes[0].sensor = true;
+    //this.body.collideWorldBounds=true;
     this.body.setZeroDamping();
     this.body.setZeroVelocity();
 
@@ -70,6 +70,7 @@ Dye.Boid.prototype.init = function() {
 };
 
 Dye.Boid.prototype.update = function(){
+    this.game.world.wrap(this.body);
     this.steer();
 };
 
@@ -159,8 +160,8 @@ Dye.Boid.prototype.startContactHandlers= {
 
 Dye.Boid.prototype.setSize=function(size){
     this.stats.size=size;
-    this.scale.setTo(this.stats.size/20, this.stats.size/20);
-    this.body.setCircle(this.stats.size*6);
+    this.body.setCircle(Math.pow(this.stats.size,1.3));
+    this.scale.setTo(this.stats.size/50, this.stats.size/50);
 };
 
 
