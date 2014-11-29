@@ -5,7 +5,6 @@ Dye.core=(function(){
     var height =  Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
     var game=new Phaser.Game(width, height, Phaser.WEBGL, '', { preload: preload, create: create, update: update, render: render },true);
 
-
     var brush;
     var bitmapData;
     var currentLevel;
@@ -15,6 +14,9 @@ Dye.core=(function(){
     }
 
     function create() {
+        //game.add.plugin(Phaser.Plugin.Debug);
+
+
         //	Enable p2 physics
         game.world.setBounds(0, 0, width, height);
         game.physics.startSystem(Phaser.Physics.P2JS);
@@ -43,6 +45,9 @@ Dye.core=(function(){
 
 
     function render(){
+        if (currentLevel) {
+            currentLevel.render();
+        }
         //bitmapData.draw(clearBrush, boid.x, boid.y,25,25,null);
     }
 

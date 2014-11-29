@@ -57,8 +57,8 @@ Dye.Boid.prototype.constructor = Dye.Boid;
 
 Dye.Boid.prototype.init = function() {
     Dye.Character.prototype.init.call(this);
+    this.timeEvents.deathTimer=this.game.time.events.add(Phaser.Timer.SECOND*this.stats.lifespan, this.naturalDeath, this);
     if (!this.stats.isFood){
-        this.timeEvents.deathTimer=this.game.time.events.add(Phaser.Timer.SECOND*this.stats.lifespan, this.naturalDeath, this);
         this.timeEvents.targetFindEvent = this.game.time.events.loop(Phaser.Timer.SECOND, this.findTarget, this);
 
         this.findTarget();
@@ -82,7 +82,7 @@ Dye.Boid.prototype.findTarget=function(){
     this.level.layers.boids.forEachAlive(function(boid){
         var distanceToCreature=Phaser.Point.distance(that,boid,true);
 
-        if (boid!=that && boid.stats.species!=that.stats.species && boid.stats.isFood &&
+        if (boid!=that && boid.stats.species!=that.stats.species &&
             boid.stats.size<that.stats.size &&  (closestFood==null || distanceToCreature<closestFoodDistance)){
             closestFood=boid;
             closestFoodDistance=distanceToCreature;
@@ -182,7 +182,7 @@ Dye.Boid.prototype.setSize=function(size){
 
 
 Dye.Boid.prototype.die=function(){
-    this.kill();
+    //this.kill();
     this.destroy();
     for (var timerName in this.timeEvents){
         this.timeEvents[timerName].timer.remove(this.timeEvents[timerName]);
@@ -191,19 +191,24 @@ Dye.Boid.prototype.die=function(){
 };
 
 Dye.Boid.prototype.naturalDeath=function(){
-    var newBoidStats=Dye.Utils.clone(this.stats);
-    newBoidStats.isFood=true;
-    newBoidStats.minimalSize=1;
-    for (var x=0;x<this.stats.size;x++){
-        var newBoid=new Dye.Boid(this.level,Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
-        newBoid.body.rotation=Math.random()*Math.PI;
-        this.level.layers.boids.add(newBoid);
-        var randomDirectionPoint=new Phaser.Point(Math.random()*2-1, Math.random()*2-1);
-        randomDirectionPoint.setMagnitude(90);
-        newBoid.moveInDirecton(randomDirectionPoint);
+    if (this.stats.isFood) {
 
-        //newBoid.moveInDirecton(new Phaser.Point(0,0));
+    }
+    else{
+        var newBoidStats=Dye.Utils.clone(this.stats);
+        newBoidStats.isFood=true;
+        newBoidStats.minimalSize=1;
+        for (var x=0;x<this.stats.size;x++){
+            var newBoid=new Dye.Boid(this.level,Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
+            newBoid.body.rotation=Math.random()*Math.PI;
+            this.level.layers.boids.add(newBoid);
+            var randomDirectionPoint=new Phaser.Point(Math.random()*2-1, Math.random()*2-1);
+            randomDirectionPoint.setMagnitude(90);
+            newBoid.moveInDirecton(randomDirectionPoint);
 
+            //newBoid.moveInDirecton(new Phaser.Point(0,0));
+
+        }
     }
     this.die();
 };
