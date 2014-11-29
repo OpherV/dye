@@ -16,6 +16,7 @@ Dye.core=(function(){
 
     function create() {
         //	Enable p2 physics
+        game.world.setBounds(0, 0, width, height);
         game.physics.startSystem(Phaser.Physics.P2JS);
         game.physics.p2.enable([], false);
 

@@ -29,10 +29,6 @@ Dye.Boid= function (level,id,x,y,stats) {
     this.game.physics.p2.enable(this,false);
 
     this.setSize(this.stats.size);
-    //this.body.setCollisionGroup(this.level.collisionGroups.boids);
-    //this.body.collides(this.level.collisionGroups.boids);
-    this.body.data.shapes[0].sensor = true;
-    //this.body.collideWorldBounds=true;
     this.body.setZeroDamping();
     this.body.setZeroVelocity();
 
@@ -86,7 +82,7 @@ Dye.Boid.prototype.findTarget=function(){
     this.level.layers.boids.forEachAlive(function(boid){
         var distanceToCreature=Phaser.Point.distance(that,boid,true);
 
-        if (boid!=that && (boid.stats.species!=that.stats.species || boid.stats.isFood) &&
+        if (boid!=that && boid.stats.species!=that.stats.species && boid.stats.isFood &&
             boid.stats.size<that.stats.size &&  (closestFood==null || distanceToCreature<closestFoodDistance)){
             closestFood=boid;
             closestFoodDistance=distanceToCreature;
@@ -103,19 +99,34 @@ Dye.Boid.prototype.findTarget=function(){
         }
     });
 
-    if ((closestFood==null && closestEnemy) || (closestEnemy && closestEnemyDistance<closestFoodDistance) ){
-        //console.log(closestEnemy);
-        var fleeVector=new Phaser.Point(this.x-closestEnemy.x,this.y-closestEnemy.y);
-        fleeVector.setMagnitude(fleeVector.getMagnitude()*2);
-        this.target={x: closestEnemy.x+fleeVector.x,
-            y: closestEnemy.y+fleeVector.y};
+    if (closestFood){
+        if (closestEnemy){
+            if(closestFoodDistance<closestEnemyDistance){
+                this.target=closestFood;
+            }
+            else{
+                var fleeVector=new Phaser.Point(this.x-closestEnemy.x,this.y-closestEnemy.y);
+                fleeVector.setMagnitude(fleeVector.getMagnitude()*2);
+                this.target={x: closestEnemy.x+fleeVector.x,
+                    y: closestEnemy.y+fleeVector.y};
+            }
+        }
+        else{
+            this.target=closestFood;
+        }
     }
-    else if (closestFood){
-        this.target=closestFood;
+    else {
+        if (closestEnemy) {
+            var fleeVector=new Phaser.Point(this.x-closestEnemy.x,this.y-closestEnemy.y);
+            fleeVector.setMagnitude(fleeVector.getMagnitude()*2);
+            this.target={x: closestEnemy.x+fleeVector.x,
+                y: closestEnemy.y+fleeVector.y};
+        }
+        else{
+            this.target=null;
+        }
     }
-    else{
-        this.target=null;
-    }
+
 };
 
 Dye.Boid.prototype.limitVelocity = function(maxVelocity){
@@ -139,7 +150,7 @@ Dye.Boid.prototype.startContactHandlers= {
     },
     "boid": function(body){
         //eat target boid
-        if ((this.stats.species!=body.sprite.stats.species || body.sprite.stats.isFood)  && this.stats.size>body.sprite.stats.size){
+        if (this.stats.species!=body.sprite.stats.species && this.stats.size>body.sprite.stats.size){
             this.setSize(this.stats.size+body.sprite.stats.size);
             body.sprite.die();
             while(this.stats.size>this.stats.maximalSize){
@@ -162,6 +173,11 @@ Dye.Boid.prototype.setSize=function(size){
     this.stats.size=size;
     this.body.setCircle(Math.pow(this.stats.size,1.3));
     this.scale.setTo(this.stats.size/50, this.stats.size/50);
+
+    this.body.collideWorldBounds=false;
+    this.body.setCollisionGroup(this.level.collisionGroups.boids);
+    this.body.collides(this.level.collisionGroups.boids);
+    this.body.data.shapes[0].sensor = true;
 };
 
 
@@ -183,7 +199,7 @@ Dye.Boid.prototype.naturalDeath=function(){
         newBoid.body.rotation=Math.random()*Math.PI;
         this.level.layers.boids.add(newBoid);
         var randomDirectionPoint=new Phaser.Point(Math.random()*2-1, Math.random()*2-1);
-        randomDirectionPoint.setMagnitude(10);
+        randomDirectionPoint.setMagnitude(90);
         newBoid.moveInDirecton(randomDirectionPoint);
 
         //newBoid.moveInDirecton(new Phaser.Point(0,0));
