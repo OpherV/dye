@@ -57,10 +57,9 @@ Dye.Boid.prototype.constructor = Dye.Boid;
 
 Dye.Boid.prototype.init = function() {
     Dye.Character.prototype.init.call(this);
-    this.timeEvents.deathTimer=this.game.time.events.add(Phaser.Timer.SECOND*this.stats.lifespan, this.naturalDeath, this);
     if (!this.stats.isFood){
         this.timeEvents.targetFindEvent = this.game.time.events.loop(Phaser.Timer.SECOND, this.findTarget, this);
-
+        this.timeEvents.deathTimer=this.game.time.events.add(Phaser.Timer.SECOND*this.stats.lifespan, this.naturalDeath, this);
         this.findTarget();
     }
 };
