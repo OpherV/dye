@@ -81,7 +81,7 @@ Dye.Boid.prototype.findTarget=function(){
     this.level.layers.boids.forEachAlive(function(boid){
         var distanceToCreature=Phaser.Point.distance(that,boid,true);
 
-        if (boid!=that && boid.stats.species!=that.stats.species &&
+        if (boid!=that &&
             boid.stats.size<that.stats.size &&  (closestFood==null || distanceToCreature<closestFoodDistance)){
             closestFood=boid;
             closestFoodDistance=distanceToCreature;
@@ -149,7 +149,7 @@ Dye.Boid.prototype.startContactHandlers= {
     },
     "boid": function(body){
         //eat target boid
-        if (this.stats.species!=body.sprite.stats.species && this.stats.size>body.sprite.stats.size){
+        if (body.sprite.stats.isFood && !this.stats.isFood  ||  this.stats.species!=body.sprite.stats.species && this.stats.size>body.sprite.stats.size){
             this.setSize(this.stats.size+body.sprite.stats.size);
             body.sprite.die();
             while(this.stats.size>this.stats.maximalSize){
@@ -170,8 +170,8 @@ Dye.Boid.prototype.startContactHandlers= {
 
 Dye.Boid.prototype.setSize=function(size){
     this.stats.size=size;
-    this.body.setCircle(Math.pow(this.stats.size,1.3));
-    this.scale.setTo(this.stats.size/50, this.stats.size/50);
+    this.body.setCircle(this.stats.size*2);
+    this.scale.setTo(Math.sqrt(this.stats.size)/25, Math.sqrt(this.stats.size)/25);
 
     this.body.collideWorldBounds=false;
     this.body.setCollisionGroup(this.level.collisionGroups.boids);

@@ -52,7 +52,7 @@ Dye.Level= function (game) {
         maximalSize: 7,
         lifespan: 30,
         speed: 200,
-        maxSpeed: 4.5
+        maxSpeed: 2.5
     };
     for (x=0;x<10;x++){
         var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,cowData);
@@ -67,7 +67,7 @@ Dye.Level= function (game) {
         maximalSize: 18,
         lifespan: 15,
         speed: 200,
-        maxSpeed: 3.5,
+        maxSpeed: 1.5,
         rotateSpeed: 50
     };
     for (x=0;x<1;x++){
@@ -115,59 +115,83 @@ Dye.Level= function (game) {
     this.isPlanningBoid=false;
 
     this.previousMousePos={x:0,y:0};
-    game.input.onDown.add(function(pointer){
-        this.isPlanningBoid=true;
-
-        if (!this.handles.startHandle){
-            this.handles.startHandle= new Phaser.Sprite(this.game,pointer.x,pointer.y,this.circleBitmapData);
-            this.handles.endHandle= new Phaser.Sprite(this.game,pointer.x,pointer.y,this.circleBitmapData);
-            this.handles.startHandle.anchor.set(0.5);
-            this.handles.endHandle.anchor.set(0.5);
-            //this.layers.ui.add(this.handles.startHandle);
-            //this.layers.ui.add(this.handles.endHandle);
-        }
-        this.handles.alpha=1;
-        this.handles.scale.setTo(1,1);
-        this.handles.startHandle.x= pointer.x;
-        this.handles.startHandle.y= pointer.y;
-    },this);
-
+    //game.input.onDown.add(function(pointer){
+    //    this.isPlanningBoid=true;
+    //
+    //    if (!this.handles.startHandle){
+    //        this.handles.startHandle= new Phaser.Sprite(this.game,pointer.x,pointer.y,this.circleBitmapData);
+    //        this.handles.endHandle= new Phaser.Sprite(this.game,pointer.x,pointer.y,this.circleBitmapData);
+    //        this.handles.startHandle.anchor.set(0.5);
+    //        this.handles.endHandle.anchor.set(0.5);
+    //        //this.layers.ui.add(this.handles.startHandle);
+    //        //this.layers.ui.add(this.handles.endHandle);
+    //    }
+    //    this.handles.alpha=1;
+    //    this.handles.scale.setTo(1,1);
+    //    this.handles.startHandle.x= pointer.x;
+    //    this.handles.startHandle.y= pointer.y;
+    //},this);
+    //
     var speciesCounter=100;
 
-    game.input.onUp.add(function(pointer){
-        this.isPlanningBoid=false;
 
-        var tween = this.game.add.tween(this.handles.scale).to({ x: 0.1, y: 0.1 }, 300, Phaser.Easing.Cubic.Out).start();
-        tween.onComplete.add(function () {
-            for (var x=0;x<this.handles.circs.length;x++){
-                this.game.tweens.remove(this.handles.circs[x].tween);
-                this.handles.circs[x].destroy();
+    game.input.onDown.add(function(pointer){
+            var minSize=Math.max(2,prompt("Enter min size (2-infinity)",5));
+            var maxSize=Math.max(minSize+1,prompt("Enter max size (min "+(minSize+1)+")",""+minSize*2));
 
-            }
-
-            var pointerDistance = Phaser.Point.distance(this.game.input.mousePointer.positionDown,this.game.input.mousePointer);
-
-
-            var scale1Value= Phaser.Math.clamp(pointerDistance/600,0,1);
-            var maxSize=scale1Value*13+7;
             //create boid
             var newBoid= {
                 species: speciesCounter,
                 colorHSLA: [Math.round(Math.random()*359), Math.round(Math.random()*99), Math.round(Math.random()*99), 1],
-                minimalSize: Math.max(2,maxSize/2),
+                minimalSize: minSize,
                 maximalSize: maxSize,
-                lifespan: (1-scale1Value)*30+15,
+                lifespan: 20,
                 speed: 200,
-                maxSpeed: Math.random()*6,
+                maxSpeed: 2,
                 rotateSpeed: 50
             };
 
             speciesCounter++;
             var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
             this.layers.boids.add(boid);
+
         },this);
 
-    },this);
+    //
+    //game.input.onUp.add(function(pointer){
+    //    this.isPlanningBoid=false;
+    //
+    //    var tween = this.game.add.tween(this.handles.scale).to({ x: 0.1, y: 0.1 }, 300, Phaser.Easing.Cubic.Out).start();
+    //    tween.onComplete.add(function () {
+    //        for (var x=0;x<this.handles.circs.length;x++){
+    //            this.game.tweens.remove(this.handles.circs[x].tween);
+    //            this.handles.circs[x].destroy();
+    //
+    //        }
+    //
+    //        var pointerDistance = Phaser.Point.distance(this.game.input.mousePointer.positionDown,this.game.input.mousePointer);
+    //
+    //
+    //        var scale1Value= Phaser.Math.clamp(pointerDistance/600,0,1);
+    //        var maxSize=scale1Value*13+7;
+    //        //create boid
+    //        var newBoid= {
+    //            species: speciesCounter,
+    //            colorHSLA: [Math.round(Math.random()*359), Math.round(Math.random()*99), Math.round(Math.random()*99), 1],
+    //            minimalSize: Math.max(2,maxSize/2),
+    //            maximalSize: maxSize,
+    //            lifespan: (1-scale1Value)*30+15,
+    //            speed: 200,
+    //            maxSpeed: Math.random()*6,
+    //            rotateSpeed: 50
+    //        };
+    //
+    //        speciesCounter++;
+    //        var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
+    //        this.layers.boids.add(boid);
+    //    },this);
+    //
+    //},this);
 
 };
 Dye.Level.prototype.constructor = Dye.Level;
