@@ -132,7 +132,6 @@ Dye.Level= function (game) {
     //    this.handles.startHandle.y= pointer.y;
     //},this);
     //
-    var speciesCounter=100;
 
 
     game.input.onDown.add(function(pointer){
@@ -141,7 +140,7 @@ Dye.Level= function (game) {
 
             //create boid
             var newBoid= {
-                species: speciesCounter,
+                species: this.getNewSpecies(),
                 colorHSLA: [Math.round(Math.random()*359), Math.round(Math.random()*99), Math.round(Math.random()*99), 1],
                 minimalSize: minSize,
                 maximalSize: maxSize,
@@ -151,7 +150,6 @@ Dye.Level= function (game) {
                 rotateSpeed: 50
             };
 
-            speciesCounter++;
             var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
             this.layers.boids.add(boid);
 
@@ -274,4 +272,9 @@ Dye.Level.prototype.getBrush=function(r,g,b,a){
     }
 
     return this.brushCache[brushString].brush;
+};
+
+Dye.Level.prototype.getNewSpecies=function(){
+    this.speciesCounter++;;
+    return this.speciesCounter;
 };

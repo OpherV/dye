@@ -8,7 +8,8 @@ Dye.Boid= function (level,id,x,y,stats) {
         lifespan: 20,
         minimalSize: 2,
         maximalSize: 10,
-        isFood: false
+        isFood: false,
+        isEgg: false
     };
 
     this.stats=Dye.Utils.extend.call(this.stats,defaultStats);
@@ -66,11 +67,15 @@ Dye.Boid.prototype.init = function() {
 
 Dye.Boid.prototype.update = function(){
     this.game.world.wrap(this.body);
-    this.steer();
+    if (!this.stats.isEgg){
+        this.steer();
+    }
 };
 
 
+
 Dye.Boid.prototype.findTarget=function(){
+    if (this.stats.isEgg){ return null};
     var that=this;
     var closestFood = null;
     var closestFoodDistance=null;
@@ -82,6 +87,7 @@ Dye.Boid.prototype.findTarget=function(){
         var distanceToCreature=Phaser.Point.distance(that,boid,true);
 
         if (boid!=that &&
+            that.stats.isEgg == false &&
             boid.stats.size<that.stats.size &&  (closestFood==null || distanceToCreature<closestFoodDistance)){
             closestFood=boid;
             closestFoodDistance=distanceToCreature;
@@ -92,7 +98,9 @@ Dye.Boid.prototype.findTarget=function(){
     this.level.layers.boids.forEachAlive(function(boid){
         var distanceToCreature=Phaser.Point.distance(that,boid,true);
 
-        if (boid!=that && boid.stats.species!=that.stats.species && boid.stats.size>that.stats.size &&  (closestEnemy==null || distanceToCreature<closestEnemyDistance)){
+        if (boid!=that &&
+          that.stats.isEgg == false &&
+           boid.stats.species!=that.stats.species && boid.stats.size>that.stats.size &&  (closestEnemy==null || distanceToCreature<closestEnemyDistance)){
             closestEnemy=boid;
             closestEnemyDistance=distanceToCreature;
         }
@@ -149,16 +157,33 @@ Dye.Boid.prototype.startContactHandlers= {
     },
     "boid": function(body){
         //eat target boid
-        if (body.sprite.stats.isFood && !this.stats.isFood  ||  this.stats.species!=body.sprite.stats.species && this.stats.size>body.sprite.stats.size){
+        if (
+          (body.sprite.stats.isFood && !this.stats.isFood)  ||  body.sprite.stats.isEgg == false && this.stats.species!=body.sprite.stats.species && this.stats.size>body.sprite.stats.size){
             this.setSize(this.stats.size+body.sprite.stats.size);
             body.sprite.die();
+            var newBoidStats=Dye.Utils.clone(this.stats);
+            newBoidStats.isEgg=true;
             while(this.stats.size>this.stats.maximalSize){
                 if (this.body)
                     this.setSize(this.stats.size-this.stats.minimalSize);
 
+                if (Math.random()<0.5){
+                    var newMin=newBoidStats.minimalSize;
+                    var newDelta=newBoidStats.maximalSize-newBoidStats.minimalSize;
+
+                    newMin=newMin+Math.max(1,Math.random()>0.5?1:-1);
+                    newDelta=newDelta+Math.max(1,Math.random()>0.5?1:-1);
+                    newBoidStats.minimalSize=newMin;
+                    newBoidStats.maximalSize=newMin+newDelta;
+                    newBoidStats.colorHSLA[0]=(newBoidStats.colorHSLA[0]+(Math.random()>0.5?40:-40)) % 359;
+                    newBoidStats.species=this.level.getNewSpecies();
+                    console.log("mutation",newBoidStats.minimalSize);
+                }
+
                 //creature new minicreature
-                var newBoid=new Dye.Boid(this.level,Dye.Utils.generateGuid(),this.x,this.y,this.stats);
+                var newBoid=new Dye.Boid(this.level,Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
                 this.level.layers.boids.add(newBoid);
+                newBoid.eggTimer();
             }
 
         }
@@ -195,7 +220,7 @@ Dye.Boid.prototype.naturalDeath=function(){
     }
     else{
         var newBoidStats=Dye.Utils.clone(this.stats);
-        newBoidStats.isFood=true;
+        newBoidStats.isFood=false;
         newBoidStats.minimalSize=1;
         for (var x=0;x<this.stats.size;x++){
             var newBoid=new Dye.Boid(this.level,Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
@@ -210,4 +235,11 @@ Dye.Boid.prototype.naturalDeath=function(){
         }
     }
     this.die();
+};
+
+
+Dye.Boid.prototype.eggTimer=function(){
+    this.timeEvents.eggTimer=this.game.time.events.add(Phaser.Timer.SECOND*5, function(){
+        this.stats.isEgg=false;
+    }, this);
 };
