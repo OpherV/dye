@@ -5,9 +5,10 @@ Dye.Boid= function (level,id,x,y,stats) {
     var defaultStats={
         speed: 200,
         maxSpeed: 7,
-        lifespan: 20,
+        //lifespan: 20, old - replaced with energy
         minimalSize: 2,
         maximalSize: 10,
+        energyCost: 2,
         isFood: false,
         isEgg: false
     };
@@ -15,6 +16,9 @@ Dye.Boid= function (level,id,x,y,stats) {
     this.stats=Dye.Utils.extend.call(this.stats,defaultStats);
     this.stats=Dye.Utils.extend.call(this.stats,stats);
     this.stats.size=this.stats.minimalSize;
+    this.stats.energyCost=Math.max(1,this.stats.maxSpeed/20*50);
+    //console.log(this.stats.maxSpeed,this.stats.energyCost);
+
     if (this.stats.isFood){
         this.stats.colorHSLA[1]=30;
     }
@@ -33,12 +37,16 @@ Dye.Boid= function (level,id,x,y,stats) {
     this.body.setZeroDamping();
     this.body.setZeroVelocity();
 
+    var minTriangleBase=50;
+    var maxTriangleBase=250;
+    var triangleBase=Math.max(0,Math.min(maxTriangleBase,(1-this.stats.maxSpeed/20)*(maxTriangleBase-minTriangleBase)+minTriangleBase));
+
     this.bitmapData=this.game.make.bitmapData(300,300);
     this.bitmapData.ctx.fillStyle = "rgba({0},{1},{2},1)".format(this.stats.colorRGB[0],this.stats.colorRGB[1],this.stats.colorRGB[2]);
     this.bitmapData.ctx.beginPath();
     this.bitmapData.ctx.moveTo(150, 0);
-    this.bitmapData.ctx.lineTo(50, 300);
-    this.bitmapData.ctx.lineTo(250, 300);
+    this.bitmapData.ctx.lineTo(150-triangleBase/2, 300);
+    this.bitmapData.ctx.lineTo(150+triangleBase/2, 300);
     this.bitmapData.ctx.fill();
 
 
@@ -46,6 +54,11 @@ Dye.Boid= function (level,id,x,y,stats) {
  //   this.body.rotation=Math.PI/2;
 
     this.steeringType=Dye.Character.STEERINGTYPES.chase;
+
+    //GUI
+    //health bar
+    this.healthbar = new Dye.gui.Healthbar(this.game,this);
+    this.gui.addChild(this.healthbar);
 
     this.init();
 
@@ -60,14 +73,14 @@ Dye.Boid.prototype.init = function() {
     Dye.Character.prototype.init.call(this);
     if (!this.stats.isFood){
         this.timeEvents.targetFindEvent = this.game.time.events.loop(Phaser.Timer.SECOND, this.findTarget, this);
-        this.timeEvents.deathTimer=this.game.time.events.add(Phaser.Timer.SECOND*this.stats.lifespan, this.naturalDeath, this);
+        //this.timeEvents.deathTimer=this.game.time.events.add(Phaser.Timer.SECOND*this.stats.lifespan, this.naturalDeath, this);
         this.findTarget();
     }
 };
 
 Dye.Boid.prototype.update = function(){
     this.game.world.wrap(this.body);
-    if (!this.stats.isEgg){
+    if (!this.stats.isEgg && !this.stats.isFood){
         this.steer();
     }
 };
@@ -75,7 +88,7 @@ Dye.Boid.prototype.update = function(){
 
 
 Dye.Boid.prototype.findTarget=function(){
-    if (this.stats.isEgg){ return null};
+    if (this.stats.isEgg){ return null}
     var that=this;
     var closestFood = null;
     var closestFoodDistance=null;
@@ -83,11 +96,12 @@ Dye.Boid.prototype.findTarget=function(){
     var closestEnemy = null;
     var closestEnemyDistance=null;
 
+    //food
     this.level.layers.boids.forEachAlive(function(boid){
         var distanceToCreature=Phaser.Point.distance(that,boid,true);
 
         if (boid!=that &&
-            that.stats.isEgg == false &&
+            boid.stats.isEgg == false &&
             boid.stats.size<that.stats.size &&  (closestFood==null || distanceToCreature<closestFoodDistance)){
             closestFood=boid;
             closestFoodDistance=distanceToCreature;
@@ -95,6 +109,7 @@ Dye.Boid.prototype.findTarget=function(){
 
     });
 
+    //enemy
     this.level.layers.boids.forEachAlive(function(boid){
         var distanceToCreature=Phaser.Point.distance(that,boid,true);
 
@@ -156,18 +171,25 @@ Dye.Boid.prototype.startContactHandlers= {
         body.sprite.destroy();
     },
     "boid": function(body){
+        var mutationChance=0.2;
+        var nutritionMultiplier=7;
+
         //eat target boid
         if (
           (body.sprite.stats.isFood && !this.stats.isFood)  ||  body.sprite.stats.isEgg == false && this.stats.species!=body.sprite.stats.species && this.stats.size>body.sprite.stats.size){
             this.setSize(this.stats.size+body.sprite.stats.size);
+            this.stats.energy = Math.min(this.stats.maxEnergy, this.stats.energy + body.sprite.stats.size*nutritionMultiplier);
+            this.healthbar.redraw();
             body.sprite.die();
+
             var newBoidStats=Dye.Utils.clone(this.stats);
             newBoidStats.isEgg=true;
             while(this.stats.size>this.stats.maximalSize){
-                if (this.body)
-                    this.setSize(this.stats.size-this.stats.minimalSize);
+                if (this.body) {
+                    this.setSize(this.stats.size - this.stats.minimalSize);
+                }
 
-                if (Math.random()<0.5){
+                if (Math.random()<mutationChance){
                     var newMin=newBoidStats.minimalSize;
                     var newDelta=newBoidStats.maximalSize-newBoidStats.minimalSize;
 
@@ -176,8 +198,14 @@ Dye.Boid.prototype.startContactHandlers= {
                     newBoidStats.minimalSize=newMin;
                     newBoidStats.maximalSize=newMin+newDelta;
                     newBoidStats.colorHSLA[0]=(newBoidStats.colorHSLA[0]+(Math.random()>0.5?40:-40)) % 359;
+                    newBoidStats.maxSpeed=Math.max(0,newBoidStats.maxSpeed+(Math.random()>0.5?1:-1));
                     newBoidStats.species=this.level.getNewSpecies();
-                    console.log("mutation",newBoidStats.minimalSize);
+
+
+
+
+
+                    //console.log("mutation",newBoidStats.maxSpeed,newBoidStats.energyCost);
                 }
 
                 //creature new minicreature
@@ -207,6 +235,7 @@ Dye.Boid.prototype.setSize=function(size){
 
 Dye.Boid.prototype.die=function(){
     //this.kill();
+    this.gui.destroy();
     this.destroy();
     for (var timerName in this.timeEvents){
         this.timeEvents[timerName].timer.remove(this.timeEvents[timerName]);
@@ -220,15 +249,15 @@ Dye.Boid.prototype.naturalDeath=function(){
     }
     else{
         var newBoidStats=Dye.Utils.clone(this.stats);
-        newBoidStats.isFood=false;
+        newBoidStats.isFood=true;
         newBoidStats.minimalSize=1;
         for (var x=0;x<this.stats.size;x++){
             var newBoid=new Dye.Boid(this.level,Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
             newBoid.body.rotation=Math.random()*Math.PI;
             this.level.layers.boids.add(newBoid);
             var randomDirectionPoint=new Phaser.Point(Math.random()*2-1, Math.random()*2-1);
-            randomDirectionPoint.setMagnitude(90);
-            newBoid.moveInDirecton(randomDirectionPoint);
+            randomDirectionPoint.setMagnitude(6);
+            newBoid.moveInDirecton(randomDirectionPoint,100);
 
             //newBoid.moveInDirecton(new Phaser.Point(0,0));
 
@@ -242,4 +271,14 @@ Dye.Boid.prototype.eggTimer=function(){
     this.timeEvents.eggTimer=this.game.time.events.add(Phaser.Timer.SECOND*5, function(){
         this.stats.isEgg=false;
     }, this);
+};
+
+Dye.Boid.prototype.doHungerEvent=function(){
+    if (this.stats.isFood==false && this.stats.isEgg==false){
+        this.stats.energy-=this.stats.energyCost;
+        this.healthbar.redraw();
+        if (this.stats.energy<=0){
+            this.naturalDeath();
+        }
+    }
 };

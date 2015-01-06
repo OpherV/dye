@@ -7,10 +7,12 @@ Dye.Character= function (level,id,x,y,stats) {
     var defaultStats={
         speed: 10,
         maxSpeed: 10,
-        rotateSpeed: 50
+        rotateSpeed: 50,
+        maxEnergy: 100
     };
 
     this.stats=Dye.Utils.extend.call(defaultStats,stats);
+    this.stats.energy=this.stats.maxEnergy;
 
     this.steerType=null;
 
@@ -19,6 +21,8 @@ Dye.Character= function (level,id,x,y,stats) {
     this.endContactHandler={};
 
     this.timeEvents = {};
+
+    this.gui=this.game.add.group();
 
 
 };
@@ -67,13 +71,13 @@ Dye.Character.prototype.init= function() {
 };
 
 Dye.Character.prototype.moveInDirecton= function(movementVector,maxSpeed) {
-    var maxSpeed=this.stats.maxSpeed;
+    var _maxSpeed=maxSpeed?maxSpeed:this.stats.maxSpeed;
 
     var finalVelocity=new Phaser.Point(this.body.world.mpx(this.body.velocity.x)+movementVector.x,
         this.body.world.mpx(this.body.velocity.y)+movementVector.y);
 
     //make sure not to go over maxspeed
-    finalVelocity.setMagnitude(Math.min(finalVelocity.getMagnitude(),maxSpeed));
+    finalVelocity.setMagnitude(Math.min(finalVelocity.getMagnitude(),_maxSpeed));
     this.body.velocity.x=finalVelocity.x;
     this.body.velocity.y=finalVelocity.y;
 
@@ -124,6 +128,11 @@ Dye.Character.prototype.steer=function(){
                 this.body.rotateRight(this.stats.rotateSpeed);
         }
     }
+};
+
+Dye.Character.prototype.render=function(){
+    this.gui.x=this.x;
+    this.gui.y=this.y;
 };
 
 //inheriting classes will override this to implement contact event handlers

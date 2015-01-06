@@ -84,6 +84,10 @@ Dye.Utils= (function(){
         return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
     }
 
+    function _rgbToHex(r, g, b) {
+        return "0x" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
     function getBrushSprite(game,r,g,b,a){
 
         var brushBmd=game.make.bitmapData();
@@ -160,6 +164,7 @@ Dye.Utils= (function(){
     }
 
     return{
+        rgbToHex: _rgbToHex,
         hslToRgb: hslToRgb,
         rgbToHsl: rgbToHsl,
         getBrushSprite: getBrushSprite,

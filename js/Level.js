@@ -1,5 +1,7 @@
 Dye=(window.Dye?window.Dye:{});
 Dye.Level= function (game) {
+    var that=this;
+
     this.game=game;
 
     this.brushCache={};
@@ -24,6 +26,13 @@ Dye.Level= function (game) {
         this.collisionGroups[collisionGroupName]=game.physics.p2.createCollisionGroup();
     }
 
+    this.timeEvents={};
+    this.timeEvents.hungerEvent=this.game.time.events.loop(Phaser.Timer.SECOND, function(){
+        that.layers.boids.forEachAlive(function(boid){
+            boid.doHungerEvent();
+        });
+    });
+
     this.debugGraphic=game.add.graphics(0,0);
 
     //generate food
@@ -35,7 +44,7 @@ Dye.Level= function (game) {
         isFood: true,
         lifespan: 10000
     };
-    for (var x=0;x<400;x++){
+    for (var x=0;x<200;x++){
         var newBoid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,foodData);
         this.layers.boids.add(newBoid);
         newBoid.body.rotation=Math.random()*Math.PI;
@@ -52,7 +61,7 @@ Dye.Level= function (game) {
         maximalSize: 7,
         lifespan: 30,
         speed: 200,
-        maxSpeed: 2.5
+        maxSpeed: 1
     };
     for (x=0;x<10;x++){
         var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,cowData);
@@ -67,7 +76,7 @@ Dye.Level= function (game) {
         maximalSize: 18,
         lifespan: 15,
         speed: 200,
-        maxSpeed: 1.5,
+        maxSpeed: 3,
         rotateSpeed: 50
     };
     for (x=0;x<1;x++){
@@ -249,7 +258,9 @@ Dye.Level.prototype.update=function(){
 };
 
 Dye.Level.prototype.render=function(){
-
+    this.layers.boids.forEachAlive(function(boid){
+        boid.render();
+    });
 };
 
 Dye.Level.prototype.paint=function(pointer,x,y){
