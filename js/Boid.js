@@ -16,7 +16,7 @@ Dye.Boid= function (level,id,x,y,stats) {
     this.stats=Dye.Utils.extend.call(this.stats,defaultStats);
     this.stats=Dye.Utils.extend.call(this.stats,stats);
     this.stats.size=this.stats.minimalSize;
-    this.stats.energyCost=Math.max(1,this.stats.maxSpeed/20*50);
+    this.stats.energyCost=Math.max(1,this.stats.maxSpeed/20*Dye.getSettings().energyCostMultiplier);
     //console.log(this.stats.maxSpeed,this.stats.energyCost);
 
     if (this.stats.isFood){
@@ -88,6 +88,7 @@ Dye.Boid.prototype.update = function(){
 
 
 Dye.Boid.prototype.findTarget=function(){
+    if (this.level.isPaused) {return null}
     if (this.stats.isEgg){ return null}
     var that=this;
     var closestFood = null;
@@ -171,8 +172,8 @@ Dye.Boid.prototype.startContactHandlers= {
         body.sprite.destroy();
     },
     "boid": function(body){
-        var mutationChance=0.2;
-        var nutritionMultiplier=7;
+        var mutationChance=Dye.getSettings().mutationChance;
+        var nutritionMultiplier=Dye.getSettings().nutritionMultiplier;
 
         //eat target boid
         if (

@@ -4,6 +4,8 @@ Dye.Level= function (game) {
 
     this.game=game;
 
+    this.isPaused=false;
+
     this.brushCache={};
 
     //this.bitmapData: bitmapData,
@@ -44,7 +46,7 @@ Dye.Level= function (game) {
         isFood: true,
         lifespan: 10000
     };
-    for (var x=0;x<200;x++){
+    for (var x=0;x<Dye.getSettings().numFood;x++){
         var newBoid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,foodData);
         this.layers.boids.add(newBoid);
         newBoid.body.rotation=Math.random()*Math.PI;
@@ -57,13 +59,13 @@ Dye.Level= function (game) {
     var cowData= {
         species: 2,
         colorHSLA: [140, 69, 30, 1],
-        minimalSize: 2,
-        maximalSize: 7,
+        minimalSize: Dye.getSettings().cowMinSize,
+        maximalSize: Dye.getSettings().cowMaxSize,
         lifespan: 30,
         speed: 200,
-        maxSpeed: 1
+        maxSpeed: Dye.getSettings().cowMaxSpeed
     };
-    for (x=0;x<10;x++){
+    for (x=0;x<Dye.getSettings().numCows;x++){
         var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,cowData);
         this.layers.boids.add(boid);
     }
@@ -72,14 +74,14 @@ Dye.Level= function (game) {
     var predator= {
         species: 3,
         colorHSLA: [340, 99, 60, 1],
-        minimalSize: 6,
-        maximalSize: 18,
+        minimalSize: Dye.getSettings().predatorMinSize,
+        maximalSize: Dye.getSettings().predatorMaxSize,
         lifespan: 15,
         speed: 200,
-        maxSpeed: 3,
+        maxSpeed: Dye.getSettings().predatorMaxSpeed,
         rotateSpeed: 50
     };
-    for (x=0;x<1;x++){
+    for (x=0;x<Dye.getSettings().numPredators;x++){
         var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,predator);
         this.layers.boids.add(boid);
     }
@@ -144,18 +146,20 @@ Dye.Level= function (game) {
 
 
     game.input.onDown.add(function(pointer){
-            var minSize=Math.max(2,prompt("Enter min size (2-infinity)",5));
-            var maxSize=Math.max(minSize+1,prompt("Enter max size (min "+(minSize+1)+")",""+minSize*2));
+            var minSize=Dye.getSettings().newBoidMinSize;
+            var maxSize=Dye.getSettings().newBoidMaxSize;
+            var colorRGB=Dye.getSettings().newBoidColor;
+            var colorHSL=Dye.Utils.rgbToHsl(colorRGB[0],colorRGB[1],colorRGB[2]);
 
             //create boid
             var newBoid= {
                 species: this.getNewSpecies(),
-                colorHSLA: [Math.round(Math.random()*359), Math.round(Math.random()*99), Math.round(Math.random()*99), 1],
+                colorHSLA: [colorHSL[0], colorHSL[1], colorHSL[2], 1],
                 minimalSize: minSize,
                 maximalSize: maxSize,
                 lifespan: 20,
                 speed: 200,
-                maxSpeed: 2,
+                maxSpeed: Dye.getSettings().newBoidMaxSpeed,
                 rotateSpeed: 50
             };
 
@@ -204,56 +208,60 @@ Dye.Level= function (game) {
 Dye.Level.prototype.constructor = Dye.Level;
 
 Dye.Level.prototype.update=function(){
-    for (var x=0;x<this.layers.boids.children.length;x++){
-        this.layers.boids.children[x].update();
-    }
+    if (this.isPaused==false) {
 
-    if (this.game.input.mousePointer.isDown && this.isPlanningBoid){
-        var didMouseMove=!Phaser.Point.equals(this.game.input.mousePointer,this.previousMousePos);
-        if (didMouseMove){
-            for (var x=0;x<this.handles.circs.length;x++){
-                this.game.tweens.remove(this.handles.circs[x].tween);
-                this.handles.circs[x].destroy();
-            }
-            this.handles.circ=[];
-            var pointerDistance = Phaser.Point.distance(this.game.input.mousePointer.positionDown,this.game.input.mousePointer);
-            for (var x=0; x< pointerDistance/(this.circDNASize*2);x++){
-                var newHandle1 = new Phaser.Sprite(this.game,x*this.circDNASize*2,0,this.circleBitmapData);
-                var newHandle2 = new Phaser.Sprite(this.game,x*this.circDNASize*2,0,this.circleBitmapData);
-                this.handles.addChild(newHandle1);
-                this.handles.addChild(newHandle2);
-                this.handles.circs.push(newHandle1);
-                this.handles.circs.push(newHandle2);
-
-                var circsPerCycle= 10;
-                var moveDistance= (2 / 5 * (x % circsPerCycle) - Math.pow(x % circsPerCycle,2) / 25) * 20;
-
-                newHandle1.tween = this.game.add.tween(newHandle1).to({ y: moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
-                    .to({ y: 0, alpha: 0.3 }, 500, Phaser.Easing.Linear.None)
-                    .to({ y: -moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
-                    .to({ y: 0, alpha: 1 }, 500, Phaser.Easing.Linear.None)
-                    .loop()
-                    .start();
-
-                newHandle2.tween = this.game.add.tween(newHandle2).to({ y: -moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
-                    .to({ y: 0, alpha: 1 }, 500, Phaser.Easing.Linear.None)
-                    .to({ y: moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
-                    .to({ y: 0, alpha: 0 }, 500, Phaser.Easing.Linear.None)
-                    .loop()
-                    .start();
-            }
+        for (var x=0;x<this.layers.boids.children.length;x++){
+            this.layers.boids.children[x].update();
         }
 
-        this.handles.x=this.game.input.mousePointer.x+this.circDNASize;
-        this.handles.y=this.game.input.mousePointer.y+this.circDNASize;
-        this.handles.rotation = Math.atan2(this.game.input.mousePointer.x - this.game.input.mousePointer.positionDown.x,
-                                            - (this.game.input.mousePointer.y- this.game.input.mousePointer.positionDown.y) )+Math.PI/2;
+        if (this.game.input.mousePointer.isDown && this.isPlanningBoid){
+            var didMouseMove=!Phaser.Point.equals(this.game.input.mousePointer,this.previousMousePos);
+            if (didMouseMove){
+                for (var x=0;x<this.handles.circs.length;x++){
+                    this.game.tweens.remove(this.handles.circs[x].tween);
+                    this.handles.circs[x].destroy();
+                }
+                this.handles.circ=[];
+                var pointerDistance = Phaser.Point.distance(this.game.input.mousePointer.positionDown,this.game.input.mousePointer);
+                for (var x=0; x< pointerDistance/(this.circDNASize*2);x++){
+                    var newHandle1 = new Phaser.Sprite(this.game,x*this.circDNASize*2,0,this.circleBitmapData);
+                    var newHandle2 = new Phaser.Sprite(this.game,x*this.circDNASize*2,0,this.circleBitmapData);
+                    this.handles.addChild(newHandle1);
+                    this.handles.addChild(newHandle2);
+                    this.handles.circs.push(newHandle1);
+                    this.handles.circs.push(newHandle2);
 
-        this.handles.endHandle.x=this.game.input.mousePointer.x;
-        this.handles.endHandle.y=this.game.input.mousePointer.y;
+                    var circsPerCycle= 10;
+                    var moveDistance= (2 / 5 * (x % circsPerCycle) - Math.pow(x % circsPerCycle,2) / 25) * 20;
+
+                    newHandle1.tween = this.game.add.tween(newHandle1).to({ y: moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
+                        .to({ y: 0, alpha: 0.3 }, 500, Phaser.Easing.Linear.None)
+                        .to({ y: -moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
+                        .to({ y: 0, alpha: 1 }, 500, Phaser.Easing.Linear.None)
+                        .loop()
+                        .start();
+
+                    newHandle2.tween = this.game.add.tween(newHandle2).to({ y: -moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
+                        .to({ y: 0, alpha: 1 }, 500, Phaser.Easing.Linear.None)
+                        .to({ y: moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
+                        .to({ y: 0, alpha: 0 }, 500, Phaser.Easing.Linear.None)
+                        .loop()
+                        .start();
+                }
+            }
+
+            this.handles.x=this.game.input.mousePointer.x+this.circDNASize;
+            this.handles.y=this.game.input.mousePointer.y+this.circDNASize;
+            this.handles.rotation = Math.atan2(this.game.input.mousePointer.x - this.game.input.mousePointer.positionDown.x,
+                                                - (this.game.input.mousePointer.y- this.game.input.mousePointer.positionDown.y) )+Math.PI/2;
+
+            this.handles.endHandle.x=this.game.input.mousePointer.x;
+            this.handles.endHandle.y=this.game.input.mousePointer.y;
 
 
-        this.previousMousePos={x: this.game.input.mousePointer.x, y: this.game.input.mousePointer.y};
+            this.previousMousePos={x: this.game.input.mousePointer.x, y: this.game.input.mousePointer.y};
+        }
+
     }
 };
 
@@ -261,6 +269,36 @@ Dye.Level.prototype.render=function(){
     this.layers.boids.forEachAlive(function(boid){
         boid.render();
     });
+};
+
+Dye.Level.prototype.destroy=function(){
+    this.isPaused=true;
+
+    var deathList=[];
+    this.layers.boids.forEachAlive(function(boid){
+        deathList.push(boid);
+    });
+
+    for (var x=0;x<deathList.length;x++){
+        deathList[x].die();
+    }
+
+    for (var layerName in this.layers){
+        this.layers[layerName].destroy(true);
+    }
+
+    for (var timerName in this.timeEvents){
+        this.timeEvents[timerName].timer.remove(this.timeEvents[timerName]);
+        delete this.timeEvents[timerName];
+    }
+
+    this.debugGraphic.destroy();
+
+    this.circleBitmapData=null; //TODO is this actual destroy?
+
+    this.game.input.onDown.removeAll();
+
+
 };
 
 Dye.Level.prototype.paint=function(pointer,x,y){

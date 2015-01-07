@@ -1,6 +1,7 @@
 <html>
 <head>
     <script type="text/javascript" src="bower_components/phaser/build/phaser.js"></script>
+    <script type="text/javascript" src="bower_components/dat.gui/dat.gui.js"></script>
     <script type="text/javascript"  src="js/vendor/phaser-debug.js"></script>
     <script type="text/javascript" src="js/Utils.js"></script>
     <script type="text/javascript" src="js/Level.js"></script>
@@ -8,6 +9,7 @@
     <script type="text/javascript" src="js/Character.js"></script>
     <script type="text/javascript" src="js/Paintball.js"></script>
     <script type="text/javascript" src="js/Boid.js"></script>
+    <script type="text/javascript" src="js/Settings.js"></script>
     <script type="text/javascript" src="js/Dye.js"></script>
 
 
@@ -16,6 +18,14 @@
         html,body{
             padding:0;
             margin: 0;
+        }
+
+        body .dg.a.has-save > ul {
+            margin-top: 27px;
+        }
+
+        .dg.a.has-save ul {
+            margin-top: 0px;
         }
     </style>
 </head>

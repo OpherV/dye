@@ -32,7 +32,7 @@ Dye.core=(function(){
 
         bitmapData.addToWorld();
 
-        currentLevel=new Dye.Level(game);
+        _startSimulation();
 
     }
 
@@ -51,10 +51,18 @@ Dye.core=(function(){
         //bitmapData.draw(clearBrush, boid.x, boid.y,25,25,null);
     }
 
+    function _startSimulation(){
+        if (currentLevel){
+            currentLevel.destroy();
+        }
+        currentLevel=new Dye.Level(game);
+    }
+
 
 
     return{
         game: game,
+        startSimulation: _startSimulation,
         version: "0.1"
     }
 })();
