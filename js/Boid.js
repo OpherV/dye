@@ -71,12 +71,7 @@ Dye.Boid.prototype.init = function(stats) {
 
     this.steeringType=Dye.Character.STEERINGTYPES.chase;
 
-
-    if (!this.stats.isFood){
-        this.timeEvents.targetFindEvent = this.game.time.events.loop(Phaser.Timer.SECOND, this.findTarget, this);
-        //this.timeEvents.deathTimer=this.game.time.events.add(Phaser.Timer.SECOND*this.stats.lifespan, this.naturalDeath, this);
-        this.findTarget();
-    }
+    this.findTarget();
 };
 
 Dye.Boid.prototype.update = function(){

@@ -35,6 +35,12 @@ Dye.Level= function (game) {
         });
     });
 
+    this.timeEvents.targetFindEvent = this.game.time.events.loop(Phaser.Timer.SECOND, function(){
+        that.layers.boids.forEachAlive(function(boid) {
+            boid.findTarget();
+        });
+    }, this);
+
     this.debugGraphic=game.add.graphics(0,0);
 
     //generate food
