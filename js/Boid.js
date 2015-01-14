@@ -1,6 +1,25 @@
 Dye=(window.Dye?window.Dye:{});
 Dye.Boid= function (level,id,x,y,stats) {
     Dye.Character.call(this, level, id,x,y,stats);
+    //construct sprite
+    Phaser.Sprite.call(this, this.game, x, y);
+
+    this.bitmapData=this.game.make.bitmapData(300,300);
+
+    this.init(stats);
+
+};
+
+Dye.Boid.prototype = Object.create(Dye.Character.prototype);
+Dye.Boid.prototype.constructor = Dye.Boid;
+
+
+
+Dye.Boid.prototype.init = function(stats) {
+    this.game.physics.p2.enable(this,false);
+
+
+    Dye.Character.prototype.init.call(this);
 
     var defaultStats={
         speed: 200,
@@ -26,12 +45,9 @@ Dye.Boid= function (level,id,x,y,stats) {
     this.kind="boid";
 
     this.stats.colorRGB=Dye.Utils.hslToRgb(this.stats.colorHSLA[0],
-                                            this.stats.colorHSLA[1],
-                                            this.stats.colorHSLA[2]);
+        this.stats.colorHSLA[1],
+        this.stats.colorHSLA[2]);
 
-    //construct sprite
-    Phaser.Sprite.call(this, this.game, x, y);
-    this.game.physics.p2.enable(this,false);
 
     this.setSize(this.stats.size);
     this.body.setZeroDamping();
@@ -41,7 +57,7 @@ Dye.Boid= function (level,id,x,y,stats) {
     var maxTriangleBase=250;
     var triangleBase=Math.max(0,Math.min(maxTriangleBase,(1-this.stats.maxSpeed/20)*(maxTriangleBase-minTriangleBase)+minTriangleBase));
 
-    this.bitmapData=this.game.make.bitmapData(300,300);
+    this.bitmapData.clear();
     this.bitmapData.ctx.fillStyle = "rgba({0},{1},{2},1)".format(this.stats.colorRGB[0],this.stats.colorRGB[1],this.stats.colorRGB[2]);
     this.bitmapData.ctx.beginPath();
     this.bitmapData.ctx.moveTo(150, 0);
@@ -51,26 +67,11 @@ Dye.Boid= function (level,id,x,y,stats) {
 
 
     this.loadTexture(this.bitmapData);
- //   this.body.rotation=Math.PI/2;
+    //   this.body.rotation=Math.PI/2;
 
     this.steeringType=Dye.Character.STEERINGTYPES.chase;
 
-    //GUI
-    //health bar
-    this.healthbar = new Dye.gui.Healthbar(this.game,this);
-    this.gui.addChild(this.healthbar);
 
-    this.init();
-
-};
-
-Dye.Boid.prototype = Object.create(Dye.Character.prototype);
-Dye.Boid.prototype.constructor = Dye.Boid;
-
-
-
-Dye.Boid.prototype.init = function() {
-    Dye.Character.prototype.init.call(this);
     if (!this.stats.isFood){
         this.timeEvents.targetFindEvent = this.game.time.events.loop(Phaser.Timer.SECOND, this.findTarget, this);
         //this.timeEvents.deathTimer=this.game.time.events.add(Phaser.Timer.SECOND*this.stats.lifespan, this.naturalDeath, this);
@@ -169,7 +170,7 @@ Dye.Boid.prototype.limitVelocity = function(maxVelocity){
 
 Dye.Boid.prototype.startContactHandlers= {
     "food": function (body) {
-        body.sprite.destroy();
+        body.sprite.kill();
     },
     "boid": function(body){
         var mutationChance=Dye.getSettings().mutationChance;
@@ -180,7 +181,7 @@ Dye.Boid.prototype.startContactHandlers= {
           (body.sprite.stats.isFood && !this.stats.isFood)  ||  body.sprite.stats.isEgg == false && this.stats.species!=body.sprite.stats.species && this.stats.size>body.sprite.stats.size){
             this.setSize(this.stats.size+body.sprite.stats.size);
             this.stats.energy = Math.min(this.stats.maxEnergy, this.stats.energy + body.sprite.stats.size*nutritionMultiplier);
-            this.healthbar.redraw();
+            //this.healthbar.redraw();
             body.sprite.die();
 
             var newBoidStats=Dye.Utils.clone(this.stats);
@@ -210,7 +211,7 @@ Dye.Boid.prototype.startContactHandlers= {
                 }
 
                 //creature new minicreature
-                var newBoid=new Dye.Boid(this.level,Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
+                var newBoid=this.level.getNewBoid(Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
                 this.level.layers.boids.add(newBoid);
                 newBoid.eggTimer();
             }
@@ -235,9 +236,7 @@ Dye.Boid.prototype.setSize=function(size){
 
 
 Dye.Boid.prototype.die=function(){
-    //this.kill();
-    this.gui.destroy();
-    this.destroy();
+    this.kill();
     for (var timerName in this.timeEvents){
         this.timeEvents[timerName].timer.remove(this.timeEvents[timerName]);
         delete this.timeEvents[timerName];
@@ -253,7 +252,7 @@ Dye.Boid.prototype.naturalDeath=function(){
         newBoidStats.isFood=true;
         newBoidStats.minimalSize=1;
         for (var x=0;x<this.stats.size;x++){
-            var newBoid=new Dye.Boid(this.level,Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
+            var newBoid=this.level.getNewBoid(Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
             newBoid.body.rotation=Math.random()*Math.PI;
             this.level.layers.boids.add(newBoid);
             var randomDirectionPoint=new Phaser.Point(Math.random()*2-1, Math.random()*2-1);
@@ -277,7 +276,7 @@ Dye.Boid.prototype.eggTimer=function(){
 Dye.Boid.prototype.doHungerEvent=function(){
     if (this.stats.isFood==false && this.stats.isEgg==false){
         this.stats.energy-=this.stats.energyCost;
-        this.healthbar.redraw();
+        //this.healthbar.redraw();
         if (this.stats.energy<=0){
             this.naturalDeath();
         }

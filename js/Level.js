@@ -47,7 +47,7 @@ Dye.Level= function (game) {
         lifespan: 10000
     };
     for (var x=0;x<Dye.getSettings().numFood;x++){
-        var newBoid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,foodData);
+        var newBoid=this.getNewBoid(Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,foodData);
         this.layers.boids.add(newBoid);
         newBoid.body.rotation=Math.random()*Math.PI;
         var randomDirectionPoint=new Phaser.Point(Math.random()*2-1, Math.random()*2-1);
@@ -66,7 +66,7 @@ Dye.Level= function (game) {
         maxSpeed: Dye.getSettings().cowMaxSpeed
     };
     for (x=0;x<Dye.getSettings().numCows;x++){
-        var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,cowData);
+        var boid=this.getNewBoid(Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,cowData);
         this.layers.boids.add(boid);
     }
 
@@ -82,7 +82,7 @@ Dye.Level= function (game) {
         rotateSpeed: 50
     };
     for (x=0;x<Dye.getSettings().numPredators;x++){
-        var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,predator);
+        var boid=this.getNewBoid(Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,predator);
         this.layers.boids.add(boid);
     }
     //
@@ -163,7 +163,7 @@ Dye.Level= function (game) {
                 rotateSpeed: 50
             };
 
-            var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
+            var boid=this.getNewBoid(Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
             this.layers.boids.add(boid);
 
         },this);
@@ -326,4 +326,16 @@ Dye.Level.prototype.getBrush=function(r,g,b,a){
 Dye.Level.prototype.getNewSpecies=function(){
     this.speciesCounter++;;
     return this.speciesCounter;
+};
+
+Dye.Level.prototype.getNewBoid=function(id,x,y,stats){
+    var boidCandidate=this.layers.boids.getFirstExists(false);
+    if (boidCandidate){
+        boidCandidate.reset(x,y);
+        boidCandidate.init(stats);
+    }
+    else{
+        boidCandidate=new Dye.Boid(this,id,x,y,stats);
+    }
+    return boidCandidate;
 };
