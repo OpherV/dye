@@ -38,32 +38,16 @@ Dye.Boid.prototype.init = function(stats) {
     this.stats.energyCost=Math.max(1,this.stats.maxSpeed/20*Dye.getSettings().energyCostMultiplier);
     //console.log(this.stats.maxSpeed,this.stats.energyCost);
 
-    if (this.stats.isFood){
-        this.stats.colorHSLA[1]=30;
-    }
+
+    this.stats.colorHSLA[1]=this.stats.isFood?0:99;
 
     this.kind="boid";
-
-    this.stats.colorRGB=Dye.Utils.hslToRgb(this.stats.colorHSLA[0],
-        this.stats.colorHSLA[1],
-        this.stats.colorHSLA[2]);
-
 
     this.setSize(this.stats.size);
     this.body.setZeroDamping();
     this.body.setZeroVelocity();
 
-    var minTriangleBase=50;
-    var maxTriangleBase=250;
-    var triangleBase=Math.max(0,Math.min(maxTriangleBase,(1-this.stats.maxSpeed/20)*(maxTriangleBase-minTriangleBase)+minTriangleBase));
-
-    this.bitmapData.clear();
-    this.bitmapData.ctx.fillStyle = "rgba({0},{1},{2},1)".format(this.stats.colorRGB[0],this.stats.colorRGB[1],this.stats.colorRGB[2]);
-    this.bitmapData.ctx.beginPath();
-    this.bitmapData.ctx.moveTo(150, 0);
-    this.bitmapData.ctx.lineTo(150-triangleBase/2, 300);
-    this.bitmapData.ctx.lineTo(150+triangleBase/2, 300);
-    this.bitmapData.ctx.fill();
+    this.drawBody();
 
 
     this.loadTexture(this.bitmapData);
@@ -261,6 +245,24 @@ Dye.Boid.prototype.naturalDeath=function(){
     this.die();
 };
 
+Dye.Boid.prototype.drawBody=function(){
+    var minTriangleBase=50;
+    var maxTriangleBase=250;
+    var triangleBase=Math.max(0,Math.min(maxTriangleBase,(1-this.stats.maxSpeed/20)*(maxTriangleBase-minTriangleBase)+minTriangleBase));
+
+    this.stats.colorRGB=Dye.Utils.hslToRgb(this.stats.colorHSLA[0],
+        this.stats.colorHSLA[1],
+        this.stats.colorHSLA[2]);
+
+    this.bitmapData.clear();
+    this.bitmapData.ctx.fillStyle = "rgba({0},{1},{2},1)".format(this.stats.colorRGB[0],this.stats.colorRGB[1],this.stats.colorRGB[2]);
+    this.bitmapData.ctx.beginPath();
+    this.bitmapData.ctx.moveTo(150, 0);
+    this.bitmapData.ctx.lineTo(150-triangleBase/2, 300);
+    this.bitmapData.ctx.lineTo(150+triangleBase/2, 300);
+    this.bitmapData.ctx.fill();
+};
+
 
 Dye.Boid.prototype.eggTimer=function(){
     this.timeEvents.eggTimer=this.game.time.events.add(Phaser.Timer.SECOND*5, function(){
@@ -269,9 +271,11 @@ Dye.Boid.prototype.eggTimer=function(){
 };
 
 Dye.Boid.prototype.doHungerEvent=function(){
+    //TODO create proper 'take damage' function
     if (this.stats.isFood==false && this.stats.isEgg==false){
         this.stats.energy-=this.stats.energyCost;
-        //this.healthbar.redraw();
+        this.stats.colorHSLA[1]=Math.round(99*this.stats.energy/this.stats.maxEnergy);
+        this.drawBody();
         if (this.stats.energy<=0){
             this.naturalDeath();
         }
