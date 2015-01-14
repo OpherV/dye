@@ -16,7 +16,7 @@ Dye.Boid.prototype.constructor = Dye.Boid;
 
 
 Dye.Boid.prototype.init = function(stats) {
-    this.game.physics.p2.enable(this,false);
+    this.game.physics.p2.enable(this,Dye.getSettings().showDebug);
 
 
     Dye.Character.prototype.init.call(this);
@@ -204,8 +204,8 @@ Dye.Boid.prototype.startContactHandlers= {
 
 Dye.Boid.prototype.setSize=function(size){
     this.stats.size=size;
-    this.body.setCircle(this.stats.size*2);
-    this.scale.setTo(Math.sqrt(this.stats.size)/25, Math.sqrt(this.stats.size)/25);
+    this.body.setCircle(Math.sqrt(this.stats.size*12));
+    this.scale.setTo(Math.sqrt(this.stats.size)/Dye.getSettings().sizeMultiplier, Math.sqrt(this.stats.size)/Dye.getSettings().sizeMultiplier);
 
     this.body.collideWorldBounds=false;
     this.body.setCollisionGroup(this.level.collisionGroups.boids);

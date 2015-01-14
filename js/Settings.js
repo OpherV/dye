@@ -1,13 +1,13 @@
 Dye=(window.Dye?window.Dye:{});
 Dye.Settings=function(){
 
-    this.numFood=200;
-    this.numCows=10;
+    this.numFood=1000;
+    this.numCows=50;
     this.cowMinSize=2;
     this.cowMaxSize=7;
     this.cowMaxSpeed=1;
 
-    this.numPredators=1;
+    this.numPredators=5;
     this.predatorMinSize=6;
     this.predatorMaxSize=18;
     this.predatorMaxSpeed=3;
@@ -15,6 +15,8 @@ Dye.Settings=function(){
     this.nutritionMultiplier=7;
     this.mutationChance=0.2;
     this.energyCostMultiplier=50;
+    this.sizeMultiplier=40;
+    this.showDebug=false;
 
     this.newBoidColor= [0,211,225];
     this.newBoidMinSize=2;
@@ -37,13 +39,13 @@ document.addEventListener("DOMContentLoaded", function(event) {
     gui.add(settings,"numFood",0);
 
     var cowFolder = gui.addFolder('Cows');
-    cowFolder.add(settings,"numCows");
+    cowFolder.add(settings,"numCows").step(1);;
     cowFolder.add(settings,"cowMinSize");
     cowFolder.add(settings,"cowMaxSize");
     cowFolder.add(settings,"cowMaxSpeed",1,20);
 
     var predatorFolder = gui.addFolder('Predators');
-    predatorFolder.add(settings,"numPredators");
+    predatorFolder.add(settings,"numPredators").step(1);
     predatorFolder.add(settings,"predatorMinSize");
     predatorFolder.add(settings,"predatorMaxSize");
     predatorFolder.add(settings,"predatorMaxSpeed",1,20);
@@ -52,6 +54,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
     generalFolder.add(settings,"nutritionMultiplier");
     generalFolder.add(settings,"mutationChance",0,1);
     generalFolder.add(settings,"energyCostMultiplier",1);
+    generalFolder.add(settings,"sizeMultiplier",1).step(1);
+    generalFolder.add(settings,"showDebug");
 
     var newBoidFolder = gui.addFolder('New Boid');
     newBoidFolder.addColor(settings,"newBoidColor");
