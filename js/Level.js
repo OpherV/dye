@@ -5,6 +5,7 @@ Dye.Level= function (game) {
     this.game=game;
 
     this.isPaused=false;
+    this.debugMode=false;
 
     this.brushCache={};
 
@@ -15,6 +16,9 @@ Dye.Level= function (game) {
         boids: null,
         ui: null
     };
+
+    this.positionGridSize=100;
+    this.positionGrid={};
 
     this.collisionGroups={
         boids: null
@@ -150,27 +154,48 @@ Dye.Level= function (game) {
     //},this);
     //
 
+    this.key1 = this.game.input.keyboard.addKey(Phaser.Keyboard.ONE);
+    this.key1.onDown.add(function(){
+        this.debugMode=!this.debugMode;
+        if(!this.debugMode){
+            this.debugGraphic.clear();
+        }
+        console.log("debug mode: ",this.debugMode);
+    }, this);
+
 
     game.input.onDown.add(function(pointer){
-            var minSize=Dye.getSettings().newBoidMinSize;
-            var maxSize=Dye.getSettings().newBoidMaxSize;
-            var colorRGB=Dye.getSettings().newBoidColor;
-            var colorHSL=Dye.Utils.rgbToHsl(colorRGB[0],colorRGB[1],colorRGB[2]);
+        console.log(this);
+            if (this.debugMode) {
+                var bodies = game.physics.p2.hitTest(pointer.position, this.layers.boids.children);
+                if (bodies.length>0)
+                {
+                    this.debugSprite=bodies[0].parent.sprite;
+                    console.log(this.debugSprite);
+                }
+            }
+            else{
 
-            //create boid
-            var newBoid= {
-                species: this.getNewSpecies(),
-                colorHSLA: [colorHSL[0], colorHSL[1], colorHSL[2], 1],
-                minimalSize: minSize,
-                maximalSize: maxSize,
-                lifespan: 20,
-                speed: 200,
-                maxSpeed: Dye.getSettings().newBoidMaxSpeed,
-                rotateSpeed: 50
-            };
+                var minSize=Dye.getSettings().newBoidMinSize;
+                var maxSize=Dye.getSettings().newBoidMaxSize;
+                var colorRGB=Dye.getSettings().newBoidColor;
+                var colorHSL=Dye.Utils.rgbToHsl(colorRGB[0],colorRGB[1],colorRGB[2]);
 
-            var boid=this.getNewBoid(Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
-            this.layers.boids.add(boid);
+                //create boid
+                var newBoid= {
+                    species: this.getNewSpecies(),
+                    colorHSLA: [colorHSL[0], colorHSL[1], colorHSL[2], 1],
+                    minimalSize: minSize,
+                    maximalSize: maxSize,
+                    lifespan: 20,
+                    speed: 200,
+                    maxSpeed: Dye.getSettings().newBoidMaxSpeed,
+                    rotateSpeed: 50
+                };
+
+                var boid=this.getNewBoid(Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
+                this.layers.boids.add(boid);
+            }
 
         },this);
 
@@ -344,4 +369,27 @@ Dye.Level.prototype.getNewBoid=function(id,x,y,stats){
         boidCandidate=new Dye.Boid(this,id,x,y,stats);
     }
     return boidCandidate;
+};
+
+Dye.Level.prototype.drawDebugGrid=function(x,y,color){
+    var _color=color?color:0x00FF00;
+    this.debugGraphic.beginFill(_color, 0.1);
+    this.debugGraphic.drawRect(x*this.positionGridSize,y*this.positionGridSize,this.positionGridSize,this.positionGridSize);
+    this.debugGraphic.drawRect(x*this.positionGridSize,y*this.positionGridSize,this.positionGridSize,this.positionGridSize);
+
+    //var style = { font: "12px Arial", fill: "#ffffff", align: "left" };
+    //this.game.add.text(x*this.positionGridSize, y*this.positionGridSize, (x+"x"+y), style);
+
+    //that.debugGraphic.clear();
+    //that.debugGraphic.beginFill(0x00FF00, 0.1);
+    //for (var x=0;x<this.game.width/this.positionGridSize;x++){
+    //    for (var y=0;y<this.game.height/this.positionGridSize;y++){
+    //        if(that.positionGrid[x+"x"+y] && that.positionGrid[x+"x"+y].length>0){
+    //            that.debugGraphic.drawRect(x*this.positionGridSize,
+    //                y*this.positionGridSize,
+    //                this.positionGridSize,
+    //                this.positionGridSize);
+    //        }
+    //    }
+    //}
 };

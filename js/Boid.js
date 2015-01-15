@@ -59,16 +59,43 @@ Dye.Boid.prototype.init = function(stats) {
 };
 
 Dye.Boid.prototype.update = function(){
+    var that=this;
+    this.oldGridPositionString=this.gridPositionString;
+    //move boid
     this.game.world.wrap(this.body);
     if (!this.stats.isEgg && !this.stats.isFood){
         this.steer();
     }
+
+
+    this.gridPosition={x: Math.floor(this.x/this.level.positionGridSize), y: Math.floor(this.y/this.level.positionGridSize)};
+    this.gridPositionString=this.gridPosition.x+"x"+this.gridPosition.y;
+
+    //remove old position
+    if (this.gridPositionString!=this.oldGridPositionString) {
+
+        if (this.level.positionGrid[this.oldGridPositionString]) {
+            this.level.positionGrid[this.oldGridPositionString] = this.level.positionGrid[this.oldGridPositionString].filter(function (boid) {
+                return boid != that;
+            });
+        }
+
+        if (this.level.positionGrid[this.gridPositionString] == null) {
+            this.level.positionGrid[this.gridPositionString] = [this];
+        }
+        else {
+            //add self to position grid
+            this.level.positionGrid[this.gridPositionString].push(this);
+        }
+    }
+
 };
 
 
 
 Dye.Boid.prototype.findTarget=function(){
     if (this.level.isPaused) {return null}
+    if (this.stats.isFood){ return null}
     if (this.stats.isEgg){ return null}
     var that=this;
     var closestFood = null;
@@ -77,8 +104,7 @@ Dye.Boid.prototype.findTarget=function(){
     var closestEnemy = null;
     var closestEnemyDistance=null;
 
-    //food
-    this.level.layers.boids.forEachAlive(function(boid){
+    var perceiveClosestFood=function(boid){
         var distanceToCreature=Phaser.Point.distance(that,boid,true);
 
         if (boid!=that &&
@@ -88,19 +114,62 @@ Dye.Boid.prototype.findTarget=function(){
             closestFoodDistance=distanceToCreature;
         }
 
-    });
+    };
 
-    //enemy
-    this.level.layers.boids.forEachAlive(function(boid){
+    var perceiveClosestEnemy=function(boid){
         var distanceToCreature=Phaser.Point.distance(that,boid,true);
 
         if (boid!=that &&
-          that.stats.isEgg == false &&
-           boid.stats.species!=that.stats.species && boid.stats.size>that.stats.size &&  (closestEnemy==null || distanceToCreature<closestEnemyDistance)){
+            that.stats.isEgg == false &&
+            boid.stats.species!=that.stats.species && boid.stats.size>that.stats.size &&  (closestEnemy==null || distanceToCreature<closestEnemyDistance)){
             closestEnemy=boid;
             closestEnemyDistance=distanceToCreature;
         }
-    });
+    };
+
+    //search in closest squares
+    var closeCharacters=[];
+    if (this.level.debugMode && this.level.debugSprite==this){
+        this.level.debugGraphic.clear();
+    }
+
+    if (this.gridPosition) {
+        for (var x = this.gridPosition.x - 1; x <= this.gridPosition.x + 1; x++) {
+            for (var y = this.gridPosition.y - 1; y <= this.gridPosition.y + 1; y++) {
+                var checkedSquare = this.level.positionGrid[x + "x" + y];
+                if (checkedSquare && checkedSquare.length > 0) {
+                    if (this.level.debugMode && this.level.debugSprite==this) {
+                        this.level.drawDebugGrid(x, y);
+                    }
+                    Array.prototype.push.apply(closeCharacters, checkedSquare);
+                }
+                else{
+                    if (this.level.debugMode && this.level.debugSprite==this) {
+                        this.level.drawDebugGrid(x, y, 0xFF0000);
+                    }
+                }
+            }
+        }
+    }
+
+    closeCharacters.forEach(perceiveClosestFood);
+    closeCharacters.forEach(perceiveClosestEnemy);
+
+    if(this.level.debugMode && this.level.debugSprite==this && closestFood){
+        this.level.debugGraphic.beginFill(0xFFFF00, 0.5);
+        this.level.debugGraphic.drawCircle(closestFood.x, closestFood.y,5)
+    }
+
+    //no characters in the position grid, or not found, iterate through all characters
+    if (closestFood==null){
+        //this.level.layers.boids.forEachAlive(perceiveClosestFood);
+    }
+
+    if (closestEnemy==null){
+        //this.level.layers.boids.forEachAlive(perceiveClosestEnemy);
+    }
+
+
 
     if (closestFood){
         if (closestEnemy){
@@ -129,6 +198,7 @@ Dye.Boid.prototype.findTarget=function(){
             this.target=null;
         }
     }
+
 
 };
 
@@ -215,6 +285,10 @@ Dye.Boid.prototype.setSize=function(size){
 
 
 Dye.Boid.prototype.die=function(){
+    var that=this;
+    this.level.positionGrid[this.gridPositionString] = this.level.positionGrid[this.gridPositionString].filter(function (boid) {
+        return boid != that;
+    });
     this.kill();
     for (var timerName in this.timeEvents){
         this.timeEvents[timerName].timer.remove(this.timeEvents[timerName]);
