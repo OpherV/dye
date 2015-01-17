@@ -273,7 +273,7 @@ Dye.Boid.prototype.startContactHandlers= {
                 }
 
                 //creature new minicreature
-                newBoidStats.size=newBoidStats.minimalSize;
+                newBoidStats.size=this.stats.minimalSize;
                 var newBoid=this.level.getNewBoid(Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
                 this.level.layers.boids.add(newBoid);
                 newBoid.startEggTimer(1);
