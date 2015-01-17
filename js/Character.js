@@ -14,7 +14,7 @@ Dye.Character= function (level,id,x,y,stats) {
     this.stats=Dye.Utils.extend.call(defaultStats,stats);
     this.stats.energy=this.stats.maxEnergy;
 
-    this.steerType=null;
+    this.steeringType=null;
 
     this.inContactWith={}; //Bodies this is touching
     this.startContactHandler={};

@@ -1,7 +1,7 @@
 Dye=(window.Dye?window.Dye:{});
 Dye.Settings=function(){
 
-    this.numFood=1000;
+    this.numFood=500;
     this.numCows=50;
     this.cowMinSize=2;
     this.cowMaxSize=7;
@@ -13,7 +13,7 @@ Dye.Settings=function(){
     this.predatorMaxSpeed=3;
 
     this.nutritionMultiplier=7;
-    this.mutationChance=0.2;
+    this.mutationChance=0.05;
     this.energyCostMultiplier=50;
     this.sizeMultiplier=40;
     this.showDebug=false;

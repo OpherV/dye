@@ -5,11 +5,7 @@ Dye.Level= function (game) {
     this.game=game;
 
     this.isPaused=false;
-    this.debugMode=false;
-
-    this.brushCache={};
-
-    //this.bitmapData: bitmapData,
+    this.debugMode=true;
 
     this.layers={
         food: null,
@@ -19,41 +15,45 @@ Dye.Level= function (game) {
 
     this.positionGridSize=100;
     this.positionGrid={};
+    this.bitmapCache={};
 
     this.collisionGroups={
-        boids: null
+
     };
+
+    //TODO check last iteration
+    for (var x=0;x<game.width/this.positionGridSize;x++){
+            this.collisionGroups[x]=game.physics.p2.createCollisionGroup();
+            console.log(this.collisionGroups[x].mask);
+    }
+
 
     for (var layerName in this.layers){
         this.layers[layerName]=game.add.group();
     }
 
-    for (var collisionGroupName in this.collisionGroups){
-        this.collisionGroups[collisionGroupName]=game.physics.p2.createCollisionGroup();
-    }
-
     this.timeEvents={};
-    this.timeEvents.hungerEvent=this.game.time.events.loop(Phaser.Timer.SECOND, function(){
+    this.timeEvents.secondLoop=this.game.time.events.loop(Phaser.Timer.SECOND, function(){
         that.layers.boids.forEachAlive(function(boid){
             boid.doHungerEvent();
+            if (boid.exists){
+                boid.findTarget();
+            }
         });
     });
 
-    this.timeEvents.targetFindEvent = this.game.time.events.loop(Phaser.Timer.SECOND, function(){
-        that.layers.boids.forEachAlive(function(boid) {
-            boid.findTarget();
+    this.timeEvents.gridLoop=this.game.time.events.loop(Phaser.Timer.SECOND/8, function(){
+        that.layers.boids.forEach(function(boid){
+                boid.updateGridPosition();
         });
-    }, this);
+    });
 
-    this.timeEvents.updateGridEvent= this.game.time.events.loop(Phaser.Timer.SECOND/20, function(){
-        that.layers.boids.forEachAlive(function(boid) {
-          boid.updateGridPosition();
-        });
-    }, this);
+
 
     this.debugGraphic=game.add.graphics(0,0);
 
-    this.bitmapCache={};
+    this.speciesCounter=100;
+
 
     //generate food
     var foodData= {
@@ -103,67 +103,9 @@ Dye.Level= function (game) {
         var boid=this.getNewBoid(Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,predator);
         this.layers.boids.add(boid);
     }
-    //
-    //for (var x=0;x<25;x++){
-    //    var minimalSize=game.rnd.integerInRange(2, 4);
-    //    var speciesData= {
-    //        species: x,
-    //        colorHSLA: [game.rnd.integerInRange(0, 359), 69, 30, 1],
-    //        minimalSize: minimalSize,
-    //        maximalSize: Math.round(minimalSize * game.rnd.integerInRange(3, 4)/2),
-    //        lifespan: game.rnd.integerInRange(30, 30)
-    //    };
-    //    for (var y=0;y<10;y++){
-    //        var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,speciesData);
-    //        this.layers.boids.add(boid);
-    //    }
-    //}
 
-    //this.game.input.addMoveCallback(this.paint, this);
-    //this.game.input.onDown.add(function(pointer){
-    //    var newPaintball=new Dye.Paintball(this,null,pointer.x,pointer.y,[0,99,99,1]);
-    //    this.layers.food.add(newPaintball);
-    //}, this);
-
-
-    var circDNASize=this.circDNASize=5;
-
-    var circleBitmapData=this.circleBitmapData= this.game.make.bitmapData(circDNASize*2,circDNASize*2);
-    circleBitmapData.ctx.fillStyle = "rgba(255,255,255,1)";
-    circleBitmapData.ctx.beginPath();
-    circleBitmapData.ctx.arc(circDNASize, circDNASize, circDNASize, 0, Math.PI*2, false);
-    circleBitmapData.ctx.closePath();
-    circleBitmapData.ctx.strokeStyle = '#FFFFFF';
-    circleBitmapData.ctx.stroke();
-    //circleBitmapData.fill();
-    this.handles = new Phaser.Sprite(this.game);
-    this.handles.circs=[];
-    this.layers.ui.add(this.handles);
-
-
-    this.isPlanningBoid=false;
-
-    this.previousMousePos={x:0,y:0};
-    //game.input.onDown.add(function(pointer){
-    //    this.isPlanningBoid=true;
-    //
-    //    if (!this.handles.startHandle){
-    //        this.handles.startHandle= new Phaser.Sprite(this.game,pointer.x,pointer.y,this.circleBitmapData);
-    //        this.handles.endHandle= new Phaser.Sprite(this.game,pointer.x,pointer.y,this.circleBitmapData);
-    //        this.handles.startHandle.anchor.set(0.5);
-    //        this.handles.endHandle.anchor.set(0.5);
-    //        //this.layers.ui.add(this.handles.startHandle);
-    //        //this.layers.ui.add(this.handles.endHandle);
-    //    }
-    //    this.handles.alpha=1;
-    //    this.handles.scale.setTo(1,1);
-    //    this.handles.startHandle.x= pointer.x;
-    //    this.handles.startHandle.y= pointer.y;
-    //},this);
-    //
-
-    this.key1 = this.game.input.keyboard.addKey(Phaser.Keyboard.ONE);
-    this.key1.onDown.add(function(){
+    this.keyA = this.game.input.keyboard.addKey(Phaser.Keyboard.A);
+    this.keyA.onDown.add(function(){
         this.debugMode=!this.debugMode;
         if(!this.debugMode){
             this.debugGraphic.clear();
@@ -206,42 +148,6 @@ Dye.Level= function (game) {
             }
 
         },this);
-
-    //
-    //game.input.onUp.add(function(pointer){
-    //    this.isPlanningBoid=false;
-    //
-    //    var tween = this.game.add.tween(this.handles.scale).to({ x: 0.1, y: 0.1 }, 300, Phaser.Easing.Cubic.Out).start();
-    //    tween.onComplete.add(function () {
-    //        for (var x=0;x<this.handles.circs.length;x++){
-    //            this.game.tweens.remove(this.handles.circs[x].tween);
-    //            this.handles.circs[x].destroy();
-    //
-    //        }
-    //
-    //        var pointerDistance = Phaser.Point.distance(this.game.input.mousePointer.positionDown,this.game.input.mousePointer);
-    //
-    //
-    //        var scale1Value= Phaser.Math.clamp(pointerDistance/600,0,1);
-    //        var maxSize=scale1Value*13+7;
-    //        //create boid
-    //        var newBoid= {
-    //            species: speciesCounter,
-    //            colorHSLA: [Math.round(Math.random()*359), Math.round(Math.random()*99), Math.round(Math.random()*99), 1],
-    //            minimalSize: Math.max(2,maxSize/2),
-    //            maximalSize: maxSize,
-    //            lifespan: (1-scale1Value)*30+15,
-    //            speed: 200,
-    //            maxSpeed: Math.random()*6,
-    //            rotateSpeed: 50
-    //        };
-    //
-    //        speciesCounter++;
-    //        var boid=new Dye.Boid(this,Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
-    //        this.layers.boids.add(boid);
-    //    },this);
-    //
-    //},this);
 
 };
 Dye.Level.prototype.constructor = Dye.Level;
@@ -363,19 +269,27 @@ Dye.Level.prototype.getBrush=function(r,g,b,a){
 };
 
 Dye.Level.prototype.getNewSpecies=function(){
-    this.speciesCounter++;;
+    this.speciesCounter++;
     return this.speciesCounter;
 };
 
 Dye.Level.prototype.getNewBoid=function(id,x,y,stats){
-    var boidCandidate=this.layers.boids.getFirstExists(false);
-    if (boidCandidate){
+    var boidCandidate=this.layers.boids.getFirstDead();
+    if(boidCandidate){
+        boidCandidate.revive();
         boidCandidate.reset(x,y);
         boidCandidate.init(stats);
     }
     else{
         boidCandidate=new Dye.Boid(this,id,x,y,stats);
     }
+
+    if (this.layers.boids.length!=this.currentNumBoids){
+        this.currentNumBoids=this.layers.boids.length;
+        //console.log(this.currentNumBoids);
+    }
+
+
     return boidCandidate;
 };
 

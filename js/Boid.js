@@ -65,19 +65,24 @@ Dye.Boid.prototype.update = function(){
 };
 
 Dye.Boid.prototype.updateGridPosition = function(){
-  var that=this;
+    var that=this;
 
-  this.oldGridPositionString=this.gridPositionString;
-  this.gridPosition={x: Math.floor(this.x/this.level.positionGridSize), y: Math.floor(this.y/this.level.positionGridSize)};
-  this.gridPositionString=this.gridPosition.x+"x"+this.gridPosition.y;
+    this.oldGridPositionString=this.gridPositionString;
+    this.gridPosition={x: Math.max(0,Math.floor(this.x/this.level.positionGridSize)),
+                       y: Math.max(0,Math.floor(this.y/this.level.positionGridSize))};
+    this.gridPositionString=this.gridPosition.x+"x"+this.gridPosition.y;
 
-  //if dead remove from grid
-  if (!this.exists && this.level.positionGrid[this.gridPositionString]){
-    this.level.positionGrid[this.gridPositionString] = this.level.positionGrid[this.gridPositionString].filter(function (boid) {
-      return boid != that;
-    });
-  }
-  else{
+    //if dead remove from grid
+    if (!this.exists && this.level.positionGrid[this.gridPositionString]){
+        this.level.positionGrid[this.gridPositionString] = this.level.positionGrid[this.gridPositionString].filter(function (boid) {
+          return boid != that;
+        });
+    }
+    else{
+
+    this.body.clearCollision(true,true);
+    this.body.setCollisionGroup(this.level.collisionGroups[this.gridPosition.x]);
+    this.body.collides(this.level.collisionGroups[this.gridPosition.x]);
 
     //remove old position
     if (this.gridPositionString!=this.oldGridPositionString) {
@@ -97,7 +102,7 @@ Dye.Boid.prototype.updateGridPosition = function(){
       }
     }
 
-  }
+    }
 
 };
 
@@ -113,7 +118,6 @@ Dye.Boid.prototype.findTarget=function(){
 
     var closestEnemy = null;
     var closestEnemyDistance=null;
-
     var perceiveClosestFood=function(boid){
         var distanceToCreature=Phaser.Point.distance(that,boid,true);
 
@@ -228,16 +232,14 @@ Dye.Boid.prototype.limitVelocity = function(maxVelocity){
 
 
 Dye.Boid.prototype.startContactHandlers= {
-    "food": function (body) {
-        body.sprite.kill();
-    },
     "boid": function(body){
         var mutationChance=Dye.getSettings().mutationChance;
         var nutritionMultiplier=Dye.getSettings().nutritionMultiplier;
 
         //eat target boid
         if (
-          (body.sprite.stats.isFood && !this.stats.isFood)  ||  body.sprite.stats.isEgg == false && this.stats.species!=body.sprite.stats.species && this.stats.size>body.sprite.stats.size){
+          (body.sprite.stats.isFood && !this.stats.isFood && !this.stats.isEgg)  ||
+          !this.stats.isEgg && !body.sprite.stats.isEgg && this.stats.species!=body.sprite.stats.species && this.stats.size>body.sprite.stats.size){
             this.setSize(this.stats.size+body.sprite.stats.size);
             this.stats.energy = Math.min(this.stats.maxEnergy, this.stats.energy + body.sprite.stats.size*nutritionMultiplier);
             //this.healthbar.redraw();
@@ -271,9 +273,10 @@ Dye.Boid.prototype.startContactHandlers= {
                 }
 
                 //creature new minicreature
+                newBoidStats.size=newBoidStats.minimalSize;
                 var newBoid=this.level.getNewBoid(Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
                 this.level.layers.boids.add(newBoid);
-                newBoid.startEggTimer();
+                newBoid.startEggTimer(1);
             }
 
         }
@@ -289,8 +292,6 @@ Dye.Boid.prototype.setSize=function(size){
     this.scale.setTo(Math.sqrt(this.stats.size)/Dye.getSettings().sizeMultiplier, Math.sqrt(this.stats.size)/Dye.getSettings().sizeMultiplier);
 
     this.body.collideWorldBounds=false;
-    this.body.setCollisionGroup(this.level.collisionGroups.boids);
-    this.body.collides(this.level.collisionGroups.boids);
     this.body.data.shapes[0].sensor = true;
 };
 
@@ -298,7 +299,6 @@ Dye.Boid.prototype.setSize=function(size){
 Dye.Boid.prototype.die=function(){
     var that=this;
     this.updateGridPosition();
-
     this.kill();
     for (var timerName in this.timeEvents){
         this.timeEvents[timerName].timer.remove(this.timeEvents[timerName]);
@@ -373,9 +373,7 @@ Dye.Boid.prototype.startEggTimer=function(time){
     var _time=time?time:5;
     this.timeEvents.startEggTimer=this.game.time.events.add(Phaser.Timer.SECOND*_time, function(){
         this.stats.isEgg=false;
-        if (Math.random()<1){
-          this.naturalDeath();
-        }
+        this.drawBody();
     }, this);
 };
 
