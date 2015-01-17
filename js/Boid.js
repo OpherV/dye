@@ -347,7 +347,12 @@ Dye.Boid.prototype.drawBody=function(){
 
     ctx.fillStyle = "rgba({0},{1},{2},1)".format(this.stats.colorRGB[0],this.stats.colorRGB[1],this.stats.colorRGB[2]);
 
-    if (this.stats.isEgg){
+    if (this.stats.isFood){
+        ctx.beginPath();
+        ctx.rect(25,25,150,150);
+        ctx.fill();
+    }
+    else if (this.stats.isEgg){
       ctx.beginPath();
       ctx.arc(150, 150, 150, 0, 2 * Math.PI, false);
       ctx.fill();
