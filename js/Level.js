@@ -45,7 +45,15 @@ Dye.Level= function (game) {
         });
     }, this);
 
+    this.timeEvents.updateGridEvent= this.game.time.events.loop(Phaser.Timer.SECOND/20, function(){
+        that.layers.boids.forEachAlive(function(boid) {
+          boid.updateGridPosition();
+        });
+    }, this);
+
     this.debugGraphic=game.add.graphics(0,0);
+
+    this.bitmapCache={};
 
     //generate food
     var foodData= {

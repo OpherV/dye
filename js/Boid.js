@@ -4,8 +4,6 @@ Dye.Boid= function (level,id,x,y,stats) {
     //construct sprite
     Phaser.Sprite.call(this, this.game, x, y);
 
-    this.bitmapData=this.game.make.bitmapData(300,300);
-
     this.init(stats);
 
 };
@@ -48,46 +46,58 @@ Dye.Boid.prototype.init = function(stats) {
     this.body.setZeroVelocity();
 
     this.drawBody();
-
-
-    this.loadTexture(this.bitmapData);
     //   this.body.rotation=Math.PI/2;
 
     this.steeringType=Dye.Character.STEERINGTYPES.chase;
 
+    this.updateGridPosition();
     this.findTarget();
 };
 
 Dye.Boid.prototype.update = function(){
     var that=this;
-    this.oldGridPositionString=this.gridPositionString;
     //move boid
     this.game.world.wrap(this.body);
     if (!this.stats.isEgg && !this.stats.isFood){
         this.steer();
     }
 
+};
 
-    this.gridPosition={x: Math.floor(this.x/this.level.positionGridSize), y: Math.floor(this.y/this.level.positionGridSize)};
-    this.gridPositionString=this.gridPosition.x+"x"+this.gridPosition.y;
+Dye.Boid.prototype.updateGridPosition = function(){
+  var that=this;
+
+  this.oldGridPositionString=this.gridPositionString;
+  this.gridPosition={x: Math.floor(this.x/this.level.positionGridSize), y: Math.floor(this.y/this.level.positionGridSize)};
+  this.gridPositionString=this.gridPosition.x+"x"+this.gridPosition.y;
+
+  //if dead remove from grid
+  if (!this.exists && this.level.positionGrid[this.gridPositionString]){
+    this.level.positionGrid[this.gridPositionString] = this.level.positionGrid[this.gridPositionString].filter(function (boid) {
+      return boid != that;
+    });
+  }
+  else{
 
     //remove old position
     if (this.gridPositionString!=this.oldGridPositionString) {
 
-        if (this.level.positionGrid[this.oldGridPositionString]) {
-            this.level.positionGrid[this.oldGridPositionString] = this.level.positionGrid[this.oldGridPositionString].filter(function (boid) {
-                return boid != that;
-            });
-        }
+      if (this.level.positionGrid[this.oldGridPositionString]) {
+        this.level.positionGrid[this.oldGridPositionString] = this.level.positionGrid[this.oldGridPositionString].filter(function (boid) {
+          return boid != that;
+        });
+      }
 
-        if (this.level.positionGrid[this.gridPositionString] == null) {
-            this.level.positionGrid[this.gridPositionString] = [this];
-        }
-        else {
-            //add self to position grid
-            this.level.positionGrid[this.gridPositionString].push(this);
-        }
+      if (this.level.positionGrid[this.gridPositionString] == null) {
+        this.level.positionGrid[this.gridPositionString] = [this];
+      }
+      else {
+        //add self to position grid
+        this.level.positionGrid[this.gridPositionString].push(this);
+      }
     }
+
+  }
 
 };
 
@@ -233,6 +243,7 @@ Dye.Boid.prototype.startContactHandlers= {
             //this.healthbar.redraw();
             body.sprite.die();
 
+            var eggTimerOffset=5;
             var newBoidStats=Dye.Utils.clone(this.stats);
             newBoidStats.isEgg=true;
             while(this.stats.size>this.stats.maximalSize){
@@ -262,7 +273,7 @@ Dye.Boid.prototype.startContactHandlers= {
                 //creature new minicreature
                 var newBoid=this.level.getNewBoid(Dye.Utils.generateGuid(),this.x,this.y,newBoidStats);
                 this.level.layers.boids.add(newBoid);
-                newBoid.eggTimer();
+                newBoid.startEggTimer();
             }
 
         }
@@ -286,9 +297,8 @@ Dye.Boid.prototype.setSize=function(size){
 
 Dye.Boid.prototype.die=function(){
     var that=this;
-    this.level.positionGrid[this.gridPositionString] = this.level.positionGrid[this.gridPositionString].filter(function (boid) {
-        return boid != that;
-    });
+    this.updateGridPosition();
+
     this.kill();
     for (var timerName in this.timeEvents){
         this.timeEvents[timerName].timer.remove(this.timeEvents[timerName]);
@@ -320,27 +330,52 @@ Dye.Boid.prototype.naturalDeath=function(){
 };
 
 Dye.Boid.prototype.drawBody=function(){
-    var minTriangleBase=50;
-    var maxTriangleBase=250;
-    var triangleBase=Math.max(0,Math.min(maxTriangleBase,(1-this.stats.maxSpeed/20)*(maxTriangleBase-minTriangleBase)+minTriangleBase));
+  this.stats.colorRGB=Dye.Utils.hslToRgb(this.stats.colorHSLA[0],
+  this.stats.colorHSLA[1],
+  this.stats.colorHSLA[2]);
 
-    this.stats.colorRGB=Dye.Utils.hslToRgb(this.stats.colorHSLA[0],
-        this.stats.colorHSLA[1],
-        this.stats.colorHSLA[2]);
+  var bitmapId=this.stats.colorRGB.toString()+this.stats.isEgg; //todo ugly, create proper bitmapid
+  var bitmapTexture;
 
-    this.bitmapData.clear();
-    this.bitmapData.ctx.fillStyle = "rgba({0},{1},{2},1)".format(this.stats.colorRGB[0],this.stats.colorRGB[1],this.stats.colorRGB[2]);
-    this.bitmapData.ctx.beginPath();
-    this.bitmapData.ctx.moveTo(150, 0);
-    this.bitmapData.ctx.lineTo(150-triangleBase/2, 300);
-    this.bitmapData.ctx.lineTo(150+triangleBase/2, 300);
-    this.bitmapData.ctx.fill();
+  if (this.level.bitmapCache[bitmapId]){
+    bitmapTexture=this.level.bitmapCache[bitmapId];
+  }
+  else{
+    //need to draw new bitmap
+    bitmapTexture=this.level.bitmapCache[bitmapId]=this.game.make.bitmapData(300,300);
+    var ctx=bitmapTexture.ctx;
+
+    ctx.fillStyle = "rgba({0},{1},{2},1)".format(this.stats.colorRGB[0],this.stats.colorRGB[1],this.stats.colorRGB[2]);
+
+    if (this.stats.isEgg){
+      ctx.beginPath();
+      ctx.arc(150, 150, 150, 0, 2 * Math.PI, false);
+      ctx.fill();
+    }
+    else{
+      var minTriangleBase=50;
+      var maxTriangleBase=250;
+      var triangleBase=Math.max(0,Math.min(maxTriangleBase,(1-this.stats.maxSpeed/20)*(maxTriangleBase-minTriangleBase)+minTriangleBase));
+
+      ctx.beginPath();
+      ctx.moveTo(150, 0);
+      ctx.lineTo(150-triangleBase/2, 300);
+      ctx.lineTo(150+triangleBase/2, 300);
+      ctx.fill();
+    }
+  }
+
+  this.loadTexture(bitmapTexture);
 };
 
 
-Dye.Boid.prototype.eggTimer=function(){
-    this.timeEvents.eggTimer=this.game.time.events.add(Phaser.Timer.SECOND*5, function(){
+Dye.Boid.prototype.startEggTimer=function(time){
+    var _time=time?time:5;
+    this.timeEvents.startEggTimer=this.game.time.events.add(Phaser.Timer.SECOND*_time, function(){
         this.stats.isEgg=false;
+        if (Math.random()<1){
+          this.naturalDeath();
+        }
     }, this);
 };
 
