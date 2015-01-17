@@ -48,6 +48,14 @@ Dye.Level= function (game) {
         });
     });
 
+    this.timeEvents.massCounter=this.game.time.events.loop(Phaser.Timer.SECOND*5, function(){
+        var massCounter=0;
+        that.layers.boids.forEachAlive(function(boid){
+            massCounter+=boid.stats.size;
+        });
+        console.log("total size ",massCounter);
+    });
+
 
 
     this.debugGraphic=game.add.graphics(0,0);
