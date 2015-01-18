@@ -70,6 +70,17 @@ Dye.Character.prototype.init= function() {
     }
 };
 
+Dye.Character.prototype.kill = function(){
+    this.body.onBeginContact.removeAll();
+    this.body.onEndContact.removeAll();
+
+    for (var timerName in this.timeEvents){
+        this.timeEvents[timerName].timer.remove(this.timeEvents[timerName]);
+        delete this.timeEvents[timerName];
+    }
+    Phaser.Sprite.prototype.kill.call(this);
+};
+
 Dye.Character.prototype.moveInDirecton= function(movementVector,maxSpeed) {
     var _maxSpeed=maxSpeed?maxSpeed:this.stats.maxSpeed;
 

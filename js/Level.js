@@ -34,7 +34,7 @@ Dye.Level= function (game) {
 
     this.timeEvents={};
     this.timeEvents.secondLoop=this.game.time.events.loop(Phaser.Timer.SECOND, function(){
-        that.layers.boids.forEachAlive(function(boid){
+        that.layers.boids.forEachExists(function(boid){
             boid.doHungerEvent();
             if (boid.exists){
                 boid.findTarget();
@@ -48,13 +48,9 @@ Dye.Level= function (game) {
         });
     });
 
-    this.timeEvents.massCounter=this.game.time.events.loop(Phaser.Timer.SECOND*5, function(){
-        var massCounter=0;
-        that.layers.boids.forEachAlive(function(boid){
-            massCounter+=boid.stats.size;
-        });
-        console.log("total size ",massCounter);
-    });
+    //this.timeEvents.massCounter=this.game.time.events.loop(Phaser.Timer.SECOND*2, function(){
+    //    that.reportSize();
+    //});
 
 
 
@@ -69,15 +65,14 @@ Dye.Level= function (game) {
         colorHSLA: [0, 69, 55, 1],
         minimalSize: 1,
         maximalSize: 4,
-        isFood: true,
-        lifespan: 10000
+        isFood: true
     };
     for (var x=0;x<Dye.getSettings().numFood;x++){
         var newBoid=this.getNewBoid(Dye.Utils.generateGuid(),game.world.randomX,game.world.randomY,foodData);
         this.layers.boids.add(newBoid);
         newBoid.body.rotation=Math.random()*Math.PI;
         var randomDirectionPoint=new Phaser.Point(Math.random()*2-1, Math.random()*2-1);
-        randomDirectionPoint.setMagnitude(10);
+        randomDirectionPoint.setMagnitude(5);
         newBoid.moveInDirecton(randomDirectionPoint);
     }
 
@@ -87,7 +82,6 @@ Dye.Level= function (game) {
         colorHSLA: [140, 69, 30, 1],
         minimalSize: Dye.getSettings().cowMinSize,
         maximalSize: Dye.getSettings().cowMaxSize,
-        lifespan: 30,
         speed: 200,
         maxSpeed: Dye.getSettings().cowMaxSpeed
     };
@@ -102,7 +96,6 @@ Dye.Level= function (game) {
         colorHSLA: [340, 99, 60, 1],
         minimalSize: Dye.getSettings().predatorMinSize,
         maximalSize: Dye.getSettings().predatorMaxSize,
-        lifespan: 15,
         speed: 200,
         maxSpeed: Dye.getSettings().predatorMaxSpeed,
         rotateSpeed: 50
@@ -122,13 +115,15 @@ Dye.Level= function (game) {
     }, this);
 
 
+    this.reportSize();
+
     game.input.onDown.add(function(pointer){
-        console.log(this);
             if (this.debugMode) {
                 var bodies = game.physics.p2.hitTest(pointer.position, this.layers.boids.children);
                 if (bodies.length>0)
                 {
                     this.debugSprite=bodies[0].parent.sprite;
+
                     console.log(this.debugSprite);
                 }
             }
@@ -145,7 +140,6 @@ Dye.Level= function (game) {
                     colorHSLA: [colorHSL[0], colorHSL[1], colorHSL[2], 1],
                     minimalSize: minSize,
                     maximalSize: maxSize,
-                    lifespan: 20,
                     speed: 200,
                     maxSpeed: Dye.getSettings().newBoidMaxSpeed,
                     rotateSpeed: 50
@@ -159,6 +153,25 @@ Dye.Level= function (game) {
 
 };
 Dye.Level.prototype.constructor = Dye.Level;
+
+Dye.Level.prototype.reportSize = function(){
+    var that=this;
+    var massCounter=0;
+    var foodCounter=0;
+    var nonFoodCounter=0;
+    that.layers.boids.forEachExists(function(boid){
+        massCounter += boid.stats.size;
+        if (boid.stats.isFood){
+            foodCounter++
+        }
+        else{
+            nonFoodCounter++;
+            //console.log("nonfood size",boid.stats.size);
+        }
+    });
+    //console.log("total size ",massCounter, "numbood",foodCounter, "numnonfood",nonFoodCounter);
+    return massCounter;
+};
 
 Dye.Level.prototype.update=function(){
     if (this.isPaused==false) {
@@ -219,7 +232,7 @@ Dye.Level.prototype.update=function(){
 };
 
 Dye.Level.prototype.render=function(){
-    this.layers.boids.forEachAlive(function(boid){
+    this.layers.boids.forEachExists(function(boid){
         boid.render();
     });
 };
@@ -228,12 +241,12 @@ Dye.Level.prototype.destroy=function(){
     this.isPaused=true;
 
     var deathList=[];
-    this.layers.boids.forEachAlive(function(boid){
+    this.layers.boids.forEachExists(function(boid){
         deathList.push(boid);
     });
 
     for (var x=0;x<deathList.length;x++){
-        deathList[x].die();
+        deathList[x].kill();
     }
 
     for (var layerName in this.layers){
@@ -284,8 +297,8 @@ Dye.Level.prototype.getNewSpecies=function(){
 Dye.Level.prototype.getNewBoid=function(id,x,y,stats){
     var boidCandidate=this.layers.boids.getFirstDead();
     if(boidCandidate){
-        boidCandidate.revive();
         boidCandidate.reset(x,y);
+        boidCandidate.stats={};
         boidCandidate.init(stats);
     }
     else{

@@ -39,15 +39,15 @@ document.addEventListener("DOMContentLoaded", function(event) {
     gui.add(settings,"numFood",0);
 
     var cowFolder = gui.addFolder('Cows');
-    cowFolder.add(settings,"numCows").step(1);;
-    cowFolder.add(settings,"cowMinSize");
-    cowFolder.add(settings,"cowMaxSize");
+    cowFolder.add(settings,"numCows").step(1).min(0);
+    cowFolder.add(settings,"cowMinSize").min(1);
+    cowFolder.add(settings,"cowMaxSize").min(1);
     cowFolder.add(settings,"cowMaxSpeed",1,20);
 
     var predatorFolder = gui.addFolder('Predators');
-    predatorFolder.add(settings,"numPredators").step(1);
-    predatorFolder.add(settings,"predatorMinSize");
-    predatorFolder.add(settings,"predatorMaxSize");
+    predatorFolder.add(settings,"numPredators").step(1).min(0);
+    predatorFolder.add(settings,"predatorMinSize").min(1);
+    predatorFolder.add(settings,"predatorMaxSize").min(1);
     predatorFolder.add(settings,"predatorMaxSpeed",1,20);
 
     var generalFolder = gui.addFolder('General');
