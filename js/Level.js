@@ -42,7 +42,7 @@ Dye.Level= function (game) {
         });
     });
 
-    this.timeEvents.gridLoop=this.game.time.events.loop(Phaser.Timer.SECOND/8, function(){
+    this.timeEvents.gridLoop=this.game.time.events.loop(Phaser.Timer.SECOND/10, function(){
         that.layers.boids.forEach(function(boid){
                 boid.updateGridPosition();
         });
@@ -129,9 +129,8 @@ Dye.Level= function (game) {
 
                 var minSize=Dye.getSettings().newBoidMinSize;
                 var maxSize=Dye.getSettings().newBoidMaxSize;
-                var colorRGB=Dye.getSettings().newBoidColor;
+                var colorRGB=Dye.Utils.hexToRgb(Dye.getSettings().newBoidColor);
                 var colorHSL=Dye.Utils.rgbToHsl(colorRGB[0],colorRGB[1],colorRGB[2]);
-
                 //create boid
                 var newBoid= {
                     species: this.getNewSpecies(),
@@ -140,9 +139,9 @@ Dye.Level= function (game) {
                     maximalSize: maxSize,
                     speed: 200,
                     maxSpeed: Dye.getSettings().newBoidMaxSpeed,
-                    rotateSpeed: 50
+                    rotateSpeed: 50,
+                    belongsToPlayer: true
                 };
-
                 var boid=this.getNewBoid(Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
                 this.layers.boids.add(boid);
             }
@@ -302,6 +301,7 @@ Dye.Level.prototype.getNewBoid=function(id,x,y,stats){
     if(boidCandidate){
         boidCandidate.reset(x,y);
         boidCandidate.stats={};
+        Dye.Character.prototype.init.call(boidCandidate,stats);
         boidCandidate.init(stats);
     }
     else{

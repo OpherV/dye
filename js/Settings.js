@@ -18,7 +18,7 @@ Dye.Settings=function(){
     this.sizeMultiplier=40;
     this.showDebug=false;
 
-    this.newBoidColor= [0,211,225];
+    this.newBoidColor= "#00d3e1";
     this.newBoidMinSize=2;
     this.newBoidMaxSize=4;
     this.newBoidMaxSpeed=2;
@@ -62,6 +62,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     var newBoidMinSizeController=newBoidFolder.add(settings,"newBoidMinSize",2).step(1);
     var newBoidMaxSizeController=newBoidFolder.add(settings,"newBoidMaxSize",3).step(1).listen();
     newBoidFolder.add(settings,"newBoidMaxSpeed",1,20);
+    newBoidFolder.open();
 
     newBoidMinSizeController.onChange(function(value){
         newBoidMaxSizeController.min(value+1);

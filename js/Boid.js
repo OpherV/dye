@@ -2,10 +2,7 @@ Dye=(window.Dye?window.Dye:{});
 Dye.Boid= function (level,id,x,y,stats) {
     Dye.Character.call(this, level, id,x,y,stats);
     //construct sprite
-    Phaser.Sprite.call(this, this.game, x, y);
-
     this.init(stats);
-
 };
 
 Dye.Boid.prototype = Object.create(Dye.Character.prototype);
@@ -14,15 +11,9 @@ Dye.Boid.prototype.constructor = Dye.Boid;
 
 
 Dye.Boid.prototype.init = function(stats) {
-    this.game.physics.p2.enable(this,Dye.getSettings().showDebug);
-
-
-    Dye.Character.prototype.init.call(this);
-
     var defaultStats={
         speed: 200,
         maxSpeed: 7,
-        //lifespan: 20, old - replaced with energy
         minimalSize: 2,
         maximalSize: 10,
         energyCost: 2,
@@ -37,7 +28,6 @@ Dye.Boid.prototype.init = function(stats) {
     }
     this.stats.energyCost=Math.max(1,this.stats.maxSpeed/20*Dye.getSettings().energyCostMultiplier);
     //console.log(this.stats.maxSpeed,this.stats.energyCost);
-
 
     this.stats.colorHSLA[1]=this.stats.isFood?0:99;
 
@@ -403,6 +393,7 @@ Dye.Boid.prototype.doHungerEvent=function(){
     //TODO create proper 'take damage' function
     if (this.stats.isFood==false && this.stats.isEgg==false){
         this.stats.energy-=this.stats.energyCost;
+
         this.stats.colorHSLA[1]=Math.round(99*this.stats.energy/this.stats.maxEnergy);
         this.drawBody();
         if (this.stats.energy<=0){

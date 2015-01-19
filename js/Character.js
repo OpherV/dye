@@ -4,6 +4,19 @@ Dye.Character= function (level,id,x,y,stats) {
     this.level=level;
     this.game=this.level.game;
 
+    Phaser.Sprite.call(this, this.game, x, y);
+
+    this.gui=this.game.add.group();
+
+    Dye.Character.prototype.init.call(this,stats);
+};
+
+Dye.Character.prototype = Object.create(Phaser.Sprite.prototype);
+Dye.Character.prototype.constructor = Dye.Character;
+
+Dye.Character.prototype.init= function(stats) {
+    this.game.physics.p2.enable(this,Dye.getSettings().showDebug);
+
     var defaultStats={
         speed: 10,
         maxSpeed: 10,
@@ -13,7 +26,7 @@ Dye.Character= function (level,id,x,y,stats) {
 
     this.stats=Dye.Utils.extend.call(defaultStats,stats);
     this.stats.energy=this.stats.maxEnergy;
-
+    //if(stats.belongsToPlayer) console.log(this.stats.maxEnergy);
     this.steeringType=null;
 
     this.inContactWith={}; //Bodies this is touching
@@ -22,15 +35,7 @@ Dye.Character= function (level,id,x,y,stats) {
 
     this.timeEvents = {};
 
-    this.gui=this.game.add.group();
 
-
-};
-
-Dye.Character.prototype = Object.create(Phaser.Sprite.prototype);
-Dye.Character.prototype.constructor = Dye.Character;
-
-Dye.Character.prototype.init= function() {
     //events
     //*************************
     this.body.onBeginContact.add(beginContactHandler, this);
