@@ -235,12 +235,17 @@ Dye.Boid.prototype.limitVelocity = function(maxVelocity){
 
 Dye.Boid.prototype.startContactHandlers= {
     "boid": function(body){
+        //another boid might have already eaten this in the same collision state
+        if (!body.sprite.exists) {return;}
+
         var mutationChance=Dye.getSettings().mutationChance;
         var nutritionMultiplier=Dye.getSettings().nutritionMultiplier;
 
 
-        var totalSizeBefore=this.level.reportSize();
-        this.oldStats=Dye.Utils.clone(this.stats);
+        //var totalSizeBefore=this.level.reportSize();
+        //var oldStats=Dye.Utils.clone(this.stats);
+        //var ateoldStats=Dye.Utils.clone(body.sprite.stats);
+
 
         //eat target boid
         if (
@@ -248,22 +253,24 @@ Dye.Boid.prototype.startContactHandlers= {
           !this.stats.isEgg && !body.sprite.stats.isEgg && this.stats.species!=body.sprite.stats.species && this.stats.size>body.sprite.stats.size){
             this.setSize(this.stats.size+body.sprite.stats.size);
             this.stats.energy = Math.min(this.stats.maxEnergy, this.stats.energy + body.sprite.stats.size*nutritionMultiplier);
-            //this.healthbar.redraw();
-
 
             var newBoidStats=Dye.Utils.clone(this.stats);
-            var ateStats=Dye.Utils.clone(body.sprite.stats);
+            //var ateStats=Dye.Utils.clone(body.sprite.stats);
             newBoidStats.isEgg=true;
 
             body.sprite.kill();
 
 
-            var totalSizeAfter=this.level.reportSize();
-            if (totalSizeBefore!=totalSizeAfter){
-                console.log(totalSizeBefore,totalSizeAfter);
-                console.log(body.sprite.alive,body.sprite.exists);
-                //console.log("ate" , ateStats, this.oldStats, this.stats);
-            }
+            //var totalSizeAfter=this.level.reportSize();
+            //if (totalSizeBefore.total!=totalSizeAfter.total){
+            //    console.log("zzzz",totalSizeBefore.food,totalSizeAfter.food);
+            //    //for(boidId in totalSizeAfter.creatures){
+            //    //    if (totalSizeAfter.creatures[boidId].size!=totalSizeBefore.creatures[boidId].size){
+            //    //        console.log(this.id==boidId);
+            //    //    }
+            //    //}
+            //    //console.log("ate" , ateStats, this.oldStats, this.stats);
+            //}
 
             while(this.stats.size>this.stats.maximalSize){
                 if (this.body) {

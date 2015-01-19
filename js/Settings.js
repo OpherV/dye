@@ -1,7 +1,7 @@
 Dye=(window.Dye?window.Dye:{});
 Dye.Settings=function(){
 
-    this.numFood=500;
+    this.numFood=1600;
     this.numCows=50;
     this.cowMinSize=2;
     this.cowMaxSize=7;

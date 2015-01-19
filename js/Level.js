@@ -5,7 +5,7 @@ Dye.Level= function (game) {
     this.game=game;
 
     this.isPaused=false;
-    this.debugMode=true;
+    this.debugMode=false;
 
     this.layers={
         food: null,
@@ -24,7 +24,7 @@ Dye.Level= function (game) {
     //TODO check last iteration
     for (var x=0;x<game.width/this.positionGridSize;x++){
             this.collisionGroups[x]=game.physics.p2.createCollisionGroup();
-            console.log(this.collisionGroups[x].mask);
+            this.collisionGroups[x].mask=Math.pow(2,x+2);
     }
 
 
@@ -48,9 +48,7 @@ Dye.Level= function (game) {
         });
     });
 
-    //this.timeEvents.massCounter=this.game.time.events.loop(Phaser.Timer.SECOND*2, function(){
-    //    that.reportSize();
-    //});
+    //this.timeEvents.massCounter=this.game.time.events.loop(Phaser.Timer.SECOND*5, that.reportSize, this);
 
 
 
@@ -115,7 +113,7 @@ Dye.Level= function (game) {
     }, this);
 
 
-    this.reportSize();
+    //this.reportSize();
 
     game.input.onDown.add(function(pointer){
             if (this.debugMode) {
@@ -155,22 +153,27 @@ Dye.Level= function (game) {
 Dye.Level.prototype.constructor = Dye.Level;
 
 Dye.Level.prototype.reportSize = function(){
+    var log={
+        total: 0,
+        nonFood: 0,
+        food: 0,
+        creatures: {}
+    };
+
     var that=this;
-    var massCounter=0;
-    var foodCounter=0;
-    var nonFoodCounter=0;
     that.layers.boids.forEachExists(function(boid){
-        massCounter += boid.stats.size;
+        log.total += boid.stats.size;
         if (boid.stats.isFood){
-            foodCounter++
+            log.food++
         }
         else{
-            nonFoodCounter++;
+            log.nonFood++;
             //console.log("nonfood size",boid.stats.size);
         }
+        //log.creatures[boid.id]=Dye.Utils.clone(boid.stats);
     });
-    //console.log("total size ",massCounter, "numbood",foodCounter, "numnonfood",nonFoodCounter);
-    return massCounter;
+    console.log("total size ",log.total, "numbood",log.food, "numnonfood",log.nonFood);
+    return log;
 };
 
 Dye.Level.prototype.update=function(){
