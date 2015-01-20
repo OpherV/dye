@@ -21,8 +21,8 @@ Dye.Level= function (game) {
 
     };
 
-    //TODO check last iteration
-    for (var x=0;x<game.width/this.positionGridSize;x++){
+
+    for (var x=0;x<=game.width/this.positionGridSize;x++){
             this.collisionGroups[x]=game.physics.p2.createCollisionGroup();
             this.collisionGroups[x].mask=Math.pow(2,x+2);
     }
