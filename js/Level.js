@@ -276,7 +276,9 @@ Dye.Level.prototype.destroy=function(){
 
     this.game.input.onDown.removeAll();
 
-    this.survivalTimer.stop(true);
+    if(this.survivalTimer){
+        this.survivalTimer.stop(true);
+    }
 
 
 };
