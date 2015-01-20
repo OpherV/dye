@@ -58,8 +58,6 @@ Dye.core=(function(){
         currentLevel=new Dye.Level(game);
     }
 
-    console.log("testing auto deploy");
-
 
     return{
         game: game,
