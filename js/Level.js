@@ -103,6 +103,8 @@ Dye.Level= function (game) {
         this.layers.boids.add(boid);
     }
 
+
+
     this.keyA = this.game.input.keyboard.addKey(Phaser.Keyboard.A);
     this.keyA.onDown.add(function(){
         this.debugMode=!this.debugMode;
@@ -112,6 +114,10 @@ Dye.Level= function (game) {
         console.log("debug mode: ",this.debugMode);
     }, this);
 
+
+    this.survivalTimerText= new Phaser.Text(game, 50, 40, "");
+    this.survivalTimerText.visible=false;
+    this.layers.ui.addChild(this.survivalTimerText);
 
     //this.reportSize();
 
@@ -143,6 +149,7 @@ Dye.Level= function (game) {
                     belongsToPlayer: true
                 };
                 var boid=this.getNewBoid(Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
+                this.startGame();
                 this.layers.boids.add(boid);
             }
 
@@ -150,6 +157,37 @@ Dye.Level= function (game) {
 
 };
 Dye.Level.prototype.constructor = Dye.Level;
+
+Dye.Level.prototype.startGame = function(){
+    this.isPlaying=true;
+    this.survivalTimerText.visible=true;
+    this.survivalTimerText.setStyle({ font: '20px arial', align: 'left', fill: "#ffffff"});
+    if (this.survivalTimer) {
+        this.survivalTimer.stop(true);
+    }
+    this.survivalTimer=this.game.time.create(false);
+    this.survivalTimer.start();
+};
+
+Dye.Level.prototype.checkLoseCondition= function(){
+    if (this.isPlaying) {
+        var that = this;
+        for (var x = 0; x < this.layers.boids.children.length; x++) {
+            var boid = this.layers.boids.children[x];
+            if (boid.exists && boid.stats.belongsToPlayer) {
+                return false;
+            }
+        }
+        this.gameEnded();
+    }
+};
+
+Dye.Level.prototype.gameEnded= function(){
+    this.survivalTimerText.setStyle({ font: '20px arial', align: 'left', fill: "#ff0000"});
+    this.survivalTimer.pause();
+    this.isPlaying=false;
+};
+
 
 Dye.Level.prototype.reportSize = function(){
     var log={
@@ -182,54 +220,25 @@ Dye.Level.prototype.update=function(){
             this.layers.boids.children[x].update();
         }
 
-        if (this.game.input.mousePointer.isDown && this.isPlanningBoid){
-            var didMouseMove=!Phaser.Point.equals(this.game.input.mousePointer,this.previousMousePos);
-            if (didMouseMove){
-                for (var x=0;x<this.handles.circs.length;x++){
-                    this.game.tweens.remove(this.handles.circs[x].tween);
-                    this.handles.circs[x].destroy();
-                }
-                this.handles.circ=[];
-                var pointerDistance = Phaser.Point.distance(this.game.input.mousePointer.positionDown,this.game.input.mousePointer);
-                for (var x=0; x< pointerDistance/(this.circDNASize*2);x++){
-                    var newHandle1 = new Phaser.Sprite(this.game,x*this.circDNASize*2,0,this.circleBitmapData);
-                    var newHandle2 = new Phaser.Sprite(this.game,x*this.circDNASize*2,0,this.circleBitmapData);
-                    this.handles.addChild(newHandle1);
-                    this.handles.addChild(newHandle2);
-                    this.handles.circs.push(newHandle1);
-                    this.handles.circs.push(newHandle2);
+    }
+};
 
-                    var circsPerCycle= 10;
-                    var moveDistance= (2 / 5 * (x % circsPerCycle) - Math.pow(x % circsPerCycle,2) / 25) * 20;
+Dye.Level.prototype.resetTimer= function() {
+    this.survivalTimer.minutes = 0;
+    this.survivalTimer.seconds = 0;
+    this.survivalTimer.milliseconds = 0;
+};
 
-                    newHandle1.tween = this.game.add.tween(newHandle1).to({ y: moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
-                        .to({ y: 0, alpha: 0.3 }, 500, Phaser.Easing.Linear.None)
-                        .to({ y: -moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
-                        .to({ y: 0, alpha: 1 }, 500, Phaser.Easing.Linear.None)
-                        .loop()
-                        .start();
+Dye.Level.prototype.updateTimer = function(){
+    if (this.survivalTimer) {
+        var seconds = Math.floor(this.survivalTimer.seconds % 60) + "";
+        seconds = seconds.length == 1 ? "0" + seconds : seconds;
 
-                    newHandle2.tween = this.game.add.tween(newHandle2).to({ y: -moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
-                        .to({ y: 0, alpha: 1 }, 500, Phaser.Easing.Linear.None)
-                        .to({ y: moveDistance, alpha: 0.5 }, 500, Phaser.Easing.Linear.None)
-                        .to({ y: 0, alpha: 0 }, 500, Phaser.Easing.Linear.None)
-                        .loop()
-                        .start();
-                }
-            }
-
-            this.handles.x=this.game.input.mousePointer.x+this.circDNASize;
-            this.handles.y=this.game.input.mousePointer.y+this.circDNASize;
-            this.handles.rotation = Math.atan2(this.game.input.mousePointer.x - this.game.input.mousePointer.positionDown.x,
-                                                - (this.game.input.mousePointer.y- this.game.input.mousePointer.positionDown.y) )+Math.PI/2;
-
-            this.handles.endHandle.x=this.game.input.mousePointer.x;
-            this.handles.endHandle.y=this.game.input.mousePointer.y;
+        var minutes = Math.floor(this.survivalTimer.seconds / 60) + "";
+        minutes = minutes.length == 1 ? "0" + minutes : minutes;
 
 
-            this.previousMousePos={x: this.game.input.mousePointer.x, y: this.game.input.mousePointer.y};
-        }
-
+        this.survivalTimerText.setText(minutes + ':' + seconds);
     }
 };
 
@@ -237,6 +246,7 @@ Dye.Level.prototype.render=function(){
     this.layers.boids.forEachExists(function(boid){
         boid.render();
     });
+    this.updateTimer();
 };
 
 Dye.Level.prototype.destroy=function(){
@@ -265,6 +275,8 @@ Dye.Level.prototype.destroy=function(){
     this.circleBitmapData=null; //TODO is this actual destroy?
 
     this.game.input.onDown.removeAll();
+
+    this.survivalTimer.stop(true);
 
 
 };

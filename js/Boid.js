@@ -305,10 +305,16 @@ Dye.Boid.prototype.setSize=function(size){
 
 
 Dye.Boid.prototype.kill=function(){
-    var that=this;
-    this.updateGridPosition();
+    //TODO refactor to make it prettier
+    if (this.stats.belongsToPlayer){
+        var shouldCheck=true;
+    }
 
+    this.updateGridPosition();
     Dye.Character.prototype.kill.call(this);
+    if (shouldCheck){
+        this.level.checkLoseCondition();
+    }
 };
 
 Dye.Boid.prototype.naturalDeath=function(){
