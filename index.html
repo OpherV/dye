@@ -1,7 +1,8 @@
 <html>
 <head>
-    <script type="text/javascript" src="bower_components/phaser/build/phaser.js"></script>
+    <script type="text/javascript" src="bower_components/phaser/build/phaser.min.js"></script>
     <script type="text/javascript" src="bower_components/dat.gui/dat.gui.js"></script>
+    <script type="text/javascript" src="bower_components/chartist/dist/chartist.min.js"></script>
     <script type="text/javascript"  src="js/vendor/phaser-debug.js"></script>
     <script type="text/javascript" src="js/Utils.js"></script>
     <script type="text/javascript" src="js/Level.js"></script>
@@ -10,8 +11,10 @@
     <script type="text/javascript" src="js/Paintball.js"></script>
     <script type="text/javascript" src="js/Boid.js"></script>
     <script type="text/javascript" src="js/Settings.js"></script>
+    <script type="text/javascript" src="js/Charts.js"></script>
     <script type="text/javascript" src="js/Dye.js"></script>
 
+    <link rel="stylesheet" href="bower_components/chartist/dist/chartist.min.css">
 
 
     <style type="text/css">
@@ -27,8 +30,30 @@
         .dg.a.has-save ul {
             margin-top: 0px;
         }
+
+        .ct-chart{
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #453D3F;
+        }
+
+        .ct-chart .ct-grid{
+            stroke: #ffffff;
+        }
+
+        .ct-chart .ct-line{
+            stroke-width: 2px;
+            stroke: red;
+        }
+
+        .ct-chart .ct-label, .ct-chart .ct-label.ct-horizontal,
+        .ct-chart .ct-label, .ct-chart .ct-label.ct-vertical{
+            color: #fff;
+        }
     </style>
 </head>
     <body>
+        <div class="ct-chart"></div>
     </body>
 </html>

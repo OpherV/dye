@@ -16,6 +16,7 @@
   ],
   "dependencies": {
     "phaser": "~2",
-    "dat.gui": "*"
+    "dat.gui": "*",
+    "chartist": "*"
   }
 }

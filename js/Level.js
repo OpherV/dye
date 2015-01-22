@@ -21,7 +21,12 @@ Dye.Level= function (game) {
 
     };
 
+    var statisticsData={
+        labels: [],
+        series: [[]]
+    };
 
+    //TODO check last iteration
     for (var x=0;x<=game.width/this.positionGridSize;x++){
             this.collisionGroups[x]=game.physics.p2.createCollisionGroup();
             this.collisionGroups[x].mask=Math.pow(2,x+2);
@@ -32,17 +37,32 @@ Dye.Level= function (game) {
         this.layers[layerName]=game.add.group();
     }
 
+    var secondElapsed=0;
+
     this.timeEvents={};
     this.timeEvents.secondLoop=this.game.time.events.loop(Phaser.Timer.SECOND, function(){
+        secondElapsed++;
+        var totalSize=0;
+        var totalBoids=0;
+
         that.layers.boids.forEachExists(function(boid){
             boid.doHungerEvent();
             if (boid.exists){
                 boid.findTarget();
+
+                //count statistics
+                totalSize+=boid.stats.size;
+                totalBoids++;
             }
         });
+
+        var averageSize=(totalSize/totalBoids).toFixed(1);
+        statisticsData.labels.push(secondElapsed);
+        statisticsData.series[0].push(averageSize);
+        Dye.Charts.update(statisticsData);
     });
 
-    this.timeEvents.gridLoop=this.game.time.events.loop(Phaser.Timer.SECOND/10, function(){
+    this.timeEvents.gridLoop=this.game.time.events.loop(Phaser.Timer.SECOND/5, function(){
         that.layers.boids.forEach(function(boid){
                 boid.updateGridPosition();
         });
