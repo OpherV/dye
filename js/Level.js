@@ -23,7 +23,7 @@ Dye.Level= function (game) {
 
     var statisticsData={
         labels: [],
-        series: [[]]
+        series: [[],[],[],[]]
     };
 
     //TODO check last iteration
@@ -43,6 +43,9 @@ Dye.Level= function (game) {
     this.timeEvents.secondLoop=this.game.time.events.loop(Phaser.Timer.SECOND, function(){
         secondElapsed++;
         var totalSize=0;
+        var totalMinSize=0;
+        var totalMaxSize=0;
+        var totalMaxSpeed=0;
         var totalBoids=0;
 
         that.layers.boids.forEachExists(function(boid){
@@ -52,13 +55,18 @@ Dye.Level= function (game) {
 
                 //count statistics
                 totalSize+=boid.stats.size;
+                totalMinSize+=boid.stats.minimalSize;
+                totalMaxSize+=boid.stats.maximalSize;
+                totalMaxSpeed+=boid.stats.maxSpeed;
                 totalBoids++;
             }
         });
 
-        var averageSize=(totalSize/totalBoids).toFixed(1);
         statisticsData.labels.push(secondElapsed);
-        statisticsData.series[0].push(averageSize);
+        statisticsData.series[0].push((totalSize/totalBoids).toFixed(1));
+        statisticsData.series[1].push((totalMinSize/totalBoids).toFixed(1));
+        statisticsData.series[2].push((totalMaxSize/totalBoids).toFixed(1));
+        statisticsData.series[3].push((totalMaxSpeed/totalBoids).toFixed(1));
         Dye.Charts.update(statisticsData);
     });
 

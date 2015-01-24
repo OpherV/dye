@@ -31,21 +31,90 @@
             margin-top: 0px;
         }
 
-        .ct-chart{
+        .chartContainer{
             position: absolute;
             bottom: 0;
             right: 0;
+            overflow: hidden;
+            max-height: 25px;
             background: #453D3F;
+            transition: all 0.5s ease;
+        }
+
+        .chartContainer.open{
+            max-height: 1000px;
+        }
+
+        .chartContainer button{
+            color: #fff;
+            border: 0 solid black;
+            padding: 4px 5px;
+        }
+
+        .chartContainer button:nth-child(1){  background-color: #438bbe;  }
+        .chartContainer button:nth-child(2){  background-color: #9243be;  }
+        .chartContainer button:nth-child(3){  background-color: #43be4a;  }
+        .chartContainer button:nth-child(4){  background-color: #be9243;  }
+
+
+
+        .ct-chart .ct-series.ct-series-a .ct-bar, .ct-chart .ct-series.ct-series-a .ct-line, .ct-chart .ct-series.ct-series-a .ct-point, .ct-chart .ct-series.ct-series-a .ct-slice.ct-donut {
+            stroke: #438bbe;
+            display: none;
+        }
+        .ct-chart .ct-series.ct-series-b .ct-bar, .ct-chart .ct-series.ct-series-b .ct-line, .ct-chart .ct-series.ct-series-b .ct-point, .ct-chart .ct-series.ct-series-b .ct-slice.ct-donut {
+            stroke: #9243be;
+            display: none;
+        }
+        .ct-chart .ct-series.ct-series-c .ct-bar, .ct-chart .ct-series.ct-series-c .ct-line, .ct-chart .ct-series.ct-series-c .ct-point, .ct-chart .ct-series.ct-series-c .ct-slice.ct-donut {
+            stroke: #43be4a;
+            display: none;
+        }
+        .ct-chart .ct-series.ct-series-d .ct-bar, .ct-chart .ct-series.ct-series-d .ct-line, .ct-chart .ct-series.ct-series-d .ct-point, .ct-chart .ct-series.ct-series-d .ct-slice.ct-donut {
+            stroke: #be9243;
+            display: none;
+        }
+
+        .showAvgSize .ct-chart .ct-series.ct-series-a .ct-bar,
+        .showAvgSize .ct-chart .ct-series.ct-series-a .ct-line,
+        .showAvgSize .ct-chart .ct-series.ct-series-a .ct-point,
+        .showAvgSize .ct-chart .ct-series.ct-series-a .ct-slice.ct-donut{
+            display: block;
+        }
+
+        .showAvgMaxSpeed .ct-chart .ct-series.ct-series-b .ct-bar,
+        .showAvgMaxSpeed  .ct-chart .ct-series.ct-series-b .ct-line,
+        .showAvgMaxSpeed  .ct-chart .ct-series.ct-series-b .ct-point,
+        .showAvgMaxSpeed  .ct-chart .ct-series.ct-series-b .ct-slice.ct-donut{
+            display: block;
+        }
+
+        .showAvgMinSize .ct-chart .ct-series.ct-series-c .ct-bar,
+        .showAvgMinSize  .ct-chart .ct-series.ct-series-c .ct-line,
+        .showAvgMinSize  .ct-chart .ct-series.ct-series-c .ct-point,
+        .showAvgMinSize  .ct-chart .ct-series.ct-series-c .ct-slice.ct-donut{
+            display: block;
+        }
+
+        .showAvgMaxSize .ct-chart .ct-series.ct-series-d .ct-bar,
+        .showAvgMaxSize  .ct-chart .ct-series.ct-series-d .ct-line,
+        .showAvgMaxSize  .ct-chart .ct-series.ct-series-d .ct-point,
+        .showAvgMaxSize  .ct-chart .ct-series.ct-series-d .ct-slice.ct-donut{
+            display: block;
+        }
+
+        .chartContainer .tab{
+            padding: 4px;
+            text-align: center;
+            background: #6b6b6b;
+            color: white;
+            cursor: pointer;
         }
 
         .ct-chart .ct-grid{
             stroke: #ffffff;
         }
 
-        .ct-chart .ct-line{
-            stroke-width: 2px;
-            stroke: red;
-        }
 
         .ct-chart .ct-label, .ct-chart .ct-label.ct-horizontal,
         .ct-chart .ct-label, .ct-chart .ct-label.ct-vertical{
@@ -54,6 +123,15 @@
     </style>
 </head>
     <body>
-        <div class="ct-chart"></div>
+        <div class="chartContainer showAvgSize">
+            <div class="tab">Open stats</div>
+            <div class="ct-chart"></div>
+            <div class="buttonContainer">
+                <button>avgSize</button>
+                <button>avgSpeed</button>
+                <button>avgMinSize</button>
+                <button>avgMaxSize</button>
+            </div>
+        </div>
     </body>
 </html>
