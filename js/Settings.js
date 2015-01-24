@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     generalFolder.add(settings,"showDebug");
 
     var newBoidFolder = gui.addFolder('New Boid');
-    newBoidFolder.addColor(settings,"newBoidColor");
+    newBoidFolder.addColor(settings,"newBoidColor").listen();
     var newBoidMinSizeController=newBoidFolder.add(settings,"newBoidMinSize",2).step(1);
     var newBoidMaxSizeController=newBoidFolder.add(settings,"newBoidMaxSize",3).step(1).listen();
     newBoidFolder.add(settings,"newBoidMaxSpeed",1,20);

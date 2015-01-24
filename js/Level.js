@@ -17,9 +17,9 @@ Dye.Level= function (game) {
     this.positionGrid={};
     this.bitmapCache={};
 
-    this.collisionGroups={
+    this.collisionGroups={};
 
-    };
+    this.playerSpecies={};
 
     var statisticsData={
         labels: [],
@@ -143,10 +143,6 @@ Dye.Level= function (game) {
     }, this);
 
 
-    this.survivalTimerText= new Phaser.Text(game, 50, 40, "");
-    this.survivalTimerText.visible=false;
-    this.layers.ui.addChild(this.survivalTimerText);
-
     //this.reportSize();
 
     game.input.onDown.add(function(pointer){
@@ -160,25 +156,32 @@ Dye.Level= function (game) {
                 }
             }
             else{
+                var numPlayerSpecies=Object.keys(this.playerSpecies).length;
+                if (numPlayerSpecies<10) {
+                    var minSize = Dye.getSettings().newBoidMinSize;
+                    var maxSize = Dye.getSettings().newBoidMaxSize;
+                    var colorRGB = Dye.Utils.hexToRgb(Dye.getSettings().newBoidColor);
+                    var colorHSL = Dye.Utils.rgbToHsl(colorRGB[0], colorRGB[1], colorRGB[2]);
+                    //create boid
+                    var newBoidStats = {
+                        species: this.getNewSpecies(),
+                        colorHSLA: [colorHSL[0], colorHSL[1], colorHSL[2], 1],
+                        minimalSize: minSize,
+                        maximalSize: maxSize,
+                        speed: 200,
+                        maxSpeed: Dye.getSettings().newBoidMaxSpeed,
+                        rotateSpeed: 50,
+                        belongsToPlayer: true
+                    };
+                    newBoidStats.originalSpecies=newBoidStats.species;
+                    var boid = this.getNewBoid(Dye.Utils.generateGuid(), pointer.x, pointer.y, newBoidStats);
+                    this.layers.boids.add(boid);
 
-                var minSize=Dye.getSettings().newBoidMinSize;
-                var maxSize=Dye.getSettings().newBoidMaxSize;
-                var colorRGB=Dye.Utils.hexToRgb(Dye.getSettings().newBoidColor);
-                var colorHSL=Dye.Utils.rgbToHsl(colorRGB[0],colorRGB[1],colorRGB[2]);
-                //create boid
-                var newBoid= {
-                    species: this.getNewSpecies(),
-                    colorHSLA: [colorHSL[0], colorHSL[1], colorHSL[2], 1],
-                    minimalSize: minSize,
-                    maximalSize: maxSize,
-                    speed: 200,
-                    maxSpeed: Dye.getSettings().newBoidMaxSpeed,
-                    rotateSpeed: 50,
-                    belongsToPlayer: true
-                };
-                var boid=this.getNewBoid(Dye.Utils.generateGuid(),pointer.x,pointer.y,newBoid);
-                this.startGame();
-                this.layers.boids.add(boid);
+                    this.startGame(newBoidStats);
+
+                    //update color for next boid
+                    Dye.getSettings().newBoidColor="#"+((1<<24)*Math.random()|0).toString(16);
+                }
             }
 
         },this);
@@ -186,34 +189,57 @@ Dye.Level= function (game) {
 };
 Dye.Level.prototype.constructor = Dye.Level;
 
-Dye.Level.prototype.startGame = function(){
+Dye.Level.prototype.startGame = function(stats){
+    var numPlayerSpecies=Object.keys(this.playerSpecies).length;
+    var species=stats.species;
+    this.playerSpecies[species]={};
+    this.playerSpecies[species].boidCount=0;
+    this.playerSpecies[species].survivalTimer=this.game.time.create(false);
+    this.playerSpecies[species].survivalTimer.start();
+
+    this.playerSpecies[species].survivalTimerText= new Phaser.Text(this.game, 50, 40+numPlayerSpecies*30, "");
+    this.playerSpecies[species].survivalTimerText.visible=true;
+    this.layers.ui.addChild(this.playerSpecies[species].survivalTimerText);
+
+    this.playerSpecies[species].survivalTimerText.setStyle({ font: '20px arial', align: 'left', fill: Dye.getSettings().newBoidColor});
+
     this.isPlaying=true;
-    this.survivalTimerText.visible=true;
-    this.survivalTimerText.setStyle({ font: '20px arial', align: 'left', fill: "#ffffff"});
-    if (this.survivalTimer) {
-        this.survivalTimer.stop(true);
-    }
-    this.survivalTimer=this.game.time.create(false);
-    this.survivalTimer.start();
 };
 
 Dye.Level.prototype.checkLoseCondition= function(){
     if (this.isPlaying) {
+        for(var playerSpecies in this.playerSpecies) {
+            this.playerSpecies[playerSpecies].boidCount=0;
+        }
+
         var that = this;
         for (var x = 0; x < this.layers.boids.children.length; x++) {
             var boid = this.layers.boids.children[x];
             if (boid.exists && boid.stats.belongsToPlayer) {
-                return false;
+                this.playerSpecies[boid.stats.originalSpecies].boidCount++;
             }
         }
-        this.gameEnded();
+
+        for(playerSpecies in this.playerSpecies){
+            if (this.playerSpecies[playerSpecies].boidCount==0){
+                this.gameEnded(playerSpecies);
+            }
+        }
     }
 };
 
-Dye.Level.prototype.gameEnded= function(){
-    this.survivalTimerText.setStyle({ font: '20px arial', align: 'left', fill: "#ff0000"});
-    this.survivalTimer.pause();
-    this.isPlaying=false;
+Dye.Level.prototype.gameEnded= function(species){
+    //this.playerSpecies[species].survivalTimerText.setStyle({ font: '20px arial', align: 'left', fill: "#ff0000"});
+    this.playerSpecies[species].survivalTimer.pause();
+    this.playerSpecies[species].survivalTimer.destroy();
+    this.playerSpecies[species].survivalTimerText.destroy();
+    console.log("time to extinction: "+this.playerSpecies[species].survivalTimerText.text);
+    delete this.playerSpecies[species];
+
+    var numPlayerSpecies=Object.keys(this.playerSpecies).length;
+    if (numPlayerSpecies==0){
+        this.isPlaying=false;
+    }
 };
 
 
@@ -251,22 +277,20 @@ Dye.Level.prototype.update=function(){
     }
 };
 
-Dye.Level.prototype.resetTimer= function() {
-    this.survivalTimer.minutes = 0;
-    this.survivalTimer.seconds = 0;
-    this.survivalTimer.milliseconds = 0;
-};
-
 Dye.Level.prototype.updateTimer = function(){
-    if (this.survivalTimer) {
-        var seconds = Math.floor(this.survivalTimer.seconds % 60) + "";
-        seconds = seconds.length == 1 ? "0" + seconds : seconds;
+    for(playerSpecies in this.playerSpecies){
+        var survivalTimer=this.playerSpecies[playerSpecies].survivalTimer;
+        var survivalTimerText=this.playerSpecies[playerSpecies].survivalTimerText;
+        if (survivalTimer){
+            var seconds = Math.floor(survivalTimer.seconds % 60) + "";
+            seconds = seconds.length == 1 ? "0" + seconds : seconds;
 
-        var minutes = Math.floor(this.survivalTimer.seconds / 60) + "";
-        minutes = minutes.length == 1 ? "0" + minutes : minutes;
+            var minutes = Math.floor(survivalTimer.seconds / 60) + "";
+            minutes = minutes.length == 1 ? "0" + minutes : minutes;
 
 
-        this.survivalTimerText.setText(minutes + ':' + seconds);
+            survivalTimerText.setText(minutes + ':' + seconds);
+        }
     }
 };
 
