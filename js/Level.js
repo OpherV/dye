@@ -180,7 +180,7 @@ Dye.Level= function (game) {
                     this.startGame(newBoidStats);
 
                     //update color for next boid
-                    Dye.getSettings().newBoidColor="#"+((1<<24)*Math.random()|0).toString(16);
+                    Dye.getSettings().newBoidColor='#'+ ('000000' + (Math.random()*0xFFFFFF<<0).toString(16)).slice(-6);
                 }
             }
 
